@@ -14,12 +14,23 @@ from mirai_chile.data.generate_dataset import create_dataloader
 
 def infer(rank, queue, result_dir):
     result_dir = os.path.expanduser(result_dir)
-    device = torch.device(f"cuda:{rank}")
+    if torch.cuda.is_available():
+        return torch.device('cuda')
+    elif torch.backends.mps.is_available():
+        # Not all operations implemented in MPS yet
+        use_mps = os.environ.get("PYTORCH_ENABLE_MPS_FALLBACK", "0") == "1"
+        if use_mps:
+            device = torch.device('mps')
+        else:
+            device = torch.device('cpu')
+    else:
+        device = torch.device('cpu')
 
     args = MiraiBaseConfigEval()
     args.device = device
+    print(f"Inference with {device}")
     model = MiraiChile(args, Cumulative_Probability_Layer)
-    device = torch.device(f"cuda:{rank}")
+
     model.to(device)
 
     logits_table = []
@@ -34,8 +45,8 @@ def infer(rank, queue, result_dir):
         identifier = data["identifier"]
 
         data["images"].to(device)
-        for k in data["batch"]:
-            data["batch"][k] = data["batch"][k].to(device)
+        for key, val in data["batch"].items():
+            data["batch"][key] = val.to(device)
 
         logits, transformer_hidden, encoder_hidden = model(data["images"], data["batch"])
 
