@@ -40,6 +40,7 @@ class PNGDataset(Dataset):
 
     @staticmethod
     def generate_data_dataframe(directory, save_as_csv=False, csv_path=None):
+        directory = os.path.expanduser(directory)
         files = sorted([f for f in os.listdir(directory) if f.endswith(".png")])
 
         file_dict = {}
