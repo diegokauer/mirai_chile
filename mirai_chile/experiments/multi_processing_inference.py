@@ -62,7 +62,7 @@ def infer(rank, queue, result_dir):
 def main(args):
     queue = mp.Queue()
     processes = []
-    dataloader = create_dataloader(args.data_directory, GenericConfig())
+    dataloader = create_dataloader(args.data_directory, GenericConfig(), batch_size=16)
     for rank in range(args.num_processes):
         p = mp.Process(target=infer, args=(rank, queue, args.result_dir))
         p.start()
