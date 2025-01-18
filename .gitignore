@@ -1,7 +1,7 @@
 ### Python template
 # Project Specific
-/mirai_chile/data/examples/
-/mirai_chile/data/output/
+mirai_chile/data/examples/
+mirai_chile/data/output/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
