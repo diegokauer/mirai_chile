@@ -14,23 +14,13 @@ from mirai_chile.data.generate_dataset import create_dataloader
 
 def infer(rank, queue, result_dir):
     result_dir = os.path.expanduser(result_dir)
-    if torch.cuda.is_available():
-        return torch.device('cuda')
-    elif torch.backends.mps.is_available():
-        # Not all operations implemented in MPS yet
-        use_mps = os.environ.get("PYTORCH_ENABLE_MPS_FALLBACK", "0") == "1"
-        if use_mps:
-            device = torch.device('mps')
-        else:
-            device = torch.device('cpu')
-    else:
-        device = torch.device('cpu')
+    device = torch.device(f"cuda:{rank}")
 
     args = MiraiBaseConfigEval()
     args.device = device
-    print(f"Inference with {device}")
+    (f"Inference with {device}")
     model = MiraiChile(args, Cumulative_Probability_Layer)
-
+    device = torch.device(f"cuda:{rank}")
     model.to(device)
 
     logits_table = []
