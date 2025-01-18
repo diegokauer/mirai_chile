@@ -14,7 +14,7 @@ from mirai_chile.configs.generic_config import GenericConfig
 from mirai_chile.data.generate_dataset import create_sampler, create_dataloader, PNGDataset
 
 
-def infer(model, device, dataloader):
+def infer(model, device, dataloader, rank):
     model.eval()
 
     logits_table = []
@@ -48,10 +48,10 @@ def infer(model, device, dataloader):
         del data  # Free memory
         print(f"Inference completed on process")
 
-    pd.DataFrame(logits_table).to_csv(os.path.join(args.result_dir, f"logits_rank_test.csv"), index=False)
-    pd.DataFrame(transformer_table).to_csv(os.path.join(args.result_dir, f"transformer_hidden_rank_test.csv"),
+    pd.DataFrame(logits_table).to_csv(os.path.join(args.result_dir, f"logits_rank_{rank}.csv"), index=False)
+    pd.DataFrame(transformer_table).to_csv(os.path.join(args.result_dir, f"transformer_hidden_rank_{rank}.csv"),
                                            index=False)
-    pd.DataFrame(encoder_table).to_csv(os.path.join(args.result_dir, f"encoder_hidden_rank_test.csv"), index=False)
+    pd.DataFrame(encoder_table).to_csv(os.path.join(args.result_dir, f"encoder_hidden_rank_{rank}.csv"), index=False)
 
 def setup(rank, world_size):
     # initialize the process group
@@ -100,7 +100,7 @@ def main(args):
     model.to(local_rank)
     ddp_model = DDP(model, device_ids=[local_rank])
 
-    infer(ddp_model, local_rank, dataloader)
+    infer(ddp_model, local_rank, dataloader, rank)
 
 
 if __name__ == "__main__":
