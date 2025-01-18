@@ -18,7 +18,7 @@ def infer(rank, queue, result_dir):
 
     args = MiraiBaseConfigEval()
     args.device = device
-    (f"Inference with {device}")
+    print(f"Inference with {device}")
     model = MiraiChile(args, Cumulative_Probability_Layer)
     device = torch.device(f"cuda:{rank}")
     model.to(device)

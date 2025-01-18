@@ -1,7 +1,7 @@
 ### Python template
 # Project Specific
-mirai_chile/data/examples/
-mirai_chile/data/output/
+/mirai_chile/data/examples/
+/mirai_chile/data/output/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -164,4 +164,5 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+!/mirai_chile/data/output/
 !/mirai_chile/data/output/
