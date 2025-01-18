@@ -24,12 +24,20 @@ class MiraiChile(nn.Module):
             param.requires_grad = not args.freeze_risk_factor_layer
 
     def forward(self, x, batch):
-        B, C, N, H, W = x.size()
-        x = x.transpose(1, 2).contiguous().view(B * N, C, H, W)
-        x = self.encoder_forward(x)
-        encoder_hidden = self.aggregate_and_classify_encoder(x)
-        encoder_hidden = encoder_hidden.view(B, N, -1)
-        transformer_hidden = self.transformer_forward(encoder_hidden, batch)
+
+        if hasattr(self.args, "use_precomputed_encoder_hiddens") and self.use_precomputed_encoder_hiddens:
+            encoder_hidden = x
+        else:
+            B, C, N, H, W = x.size()
+            x = x.transpose(1, 2).contiguous().view(B * N, C, H, W)
+            x = self.encoder_forward(x)
+            encoder_hidden = self.aggregate_and_classify_encoder(x)
+
+        if hasattr(self.args, "use_precomputed_trasnformer_hiddens") and self.use_precomputed_trasnformer_hiddens:
+            transformer_hidden = x
+        else:
+            encoder_hidden = encoder_hidden.view(B, N, -1)
+            transformer_hidden = self.transformer_forward(encoder_hidden, batch)
 
         if hasattr(self.args, "use_original_aggregate") and self.args.use_original_aggregate:
             logit, transformer_hidden = self._transformer.aggregate_and_classify(transformer_hidden)

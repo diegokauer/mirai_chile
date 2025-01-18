@@ -78,11 +78,6 @@ def main(args):
     torch.cuda.set_device(local_rank)
     print(f"host: {gethostname()}, rank: {rank}, local_rank: {local_rank}")
 
-    if torch.cuda.is_available():
-        device = torch.device("cuda")
-    else:
-        device = torch.device("cpu")
-
     kwargs = {
         'batch_size': 1,
         'num_workers': int(os.environ["SLURM_CPUS_PER_TASK"]),

@@ -1,7 +1,6 @@
 import os
 
-import pandas as pd
-import torch
+import modin.pandas as pd
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.distributed import DistributedSampler
 

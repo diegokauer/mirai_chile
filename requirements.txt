@@ -1,5 +1,5 @@
-setuptools~=73.0.1
-numpy~=1.24.4
-pillow~=9.0.0
-pandas~=2.0.3
-torchvision~=0.19.1
+setuptools>=73.0.1
+numpy>=1.24.4
+pillow>=9.0.0
+torchvision>=0.19.1
+pandas>=2.0.3
