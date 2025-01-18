@@ -23,32 +23,34 @@ def infer(model, device, dataloader, rank):
 
     with torch.no_grad():
         for i, data in enumerate(dataloader):
-            # if i == 99:
-            #     break
+            if i == 99:
+                break
+            try:
+                identifier = data["identifier"]
+                data["images"].to(device)
+                for key, val in data["batch"].items():
+                    data["batch"][key] = val.to(device)
 
-            identifier = data["identifier"]
-            data["images"].to(device)
-            for key, val in data["batch"].items():
-                data["batch"][key] = val.to(device)
 
-            logits, transformer_hidden, encoder_hidden = model(data["images"], data["batch"])
+                logits, transformer_hidden, encoder_hidden = model(data["images"], data["batch"])
 
-        logits, transformer_hidden, encoder_hidden = model(data["images"], data["batch"])
 
-        for i, id in enumerate(identifier):
-            logits_table.append(
-                {"identifier": id, **{f"logit_{j}": logits[i, j].item() for j in range(logits.size(1))}})
-            transformer_table.append(
-                {"identifier": id,
-                 **{f"hidden_{j}": transformer_hidden[i, j].item() for j in range(transformer_hidden.size(1))}}
-            )
-            encoder_table.append(
-                {"identifier": id,
-                 **{f"encoder_{j}": encoder_hidden[i, j].item() for j in range(encoder_hidden.size(1))}}
-            )
+                for i, id in enumerate(identifier):
+                    logits_table.append(
+                        {"identifier": id, **{f"logit_{j}": logits[i, j].item() for j in range(logits.size(1))}})
+                    transformer_table.append(
+                        {"identifier": id,
+                         **{f"hidden_{j}": transformer_hidden[i, j].item() for j in range(transformer_hidden.size(1))}}
+                    )
+                    encoder_table.append(
+                        {"identifier": id,
+                         **{f"encoder_{j}": encoder_hidden[i, j].item() for j in range(encoder_hidden.size(1))}}
+                    )
 
-        del data  # Free memory
-        print(f"Inference completed on process")
+                del data  # Free memory
+                print(f"Inference completed on process")
+            except Exception as e:
+                print(data["identifier"], "failed:", e)
 
     pd.DataFrame(logits_table).to_csv(os.path.join(args.result_dir, f"logits_rank_{rank}.csv"), index=False)
     pd.DataFrame(transformer_table).to_csv(os.path.join(args.result_dir, f"transformer_hidden_rank_{rank}.csv"),
