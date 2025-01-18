@@ -23,8 +23,8 @@ def infer(model, device, dataloader, rank):
 
     with torch.no_grad():
         for i, data in enumerate(dataloader):
-            if i == 99:
-                break
+            # if i == 99:
+            #     break
 
             identifier = data["identifier"]
             data["images"].to(device)
