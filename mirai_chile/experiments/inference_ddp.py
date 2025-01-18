@@ -82,15 +82,12 @@ def main(args):
         'batch_size': 1,
         'num_workers': int(os.environ["SLURM_CPUS_PER_TASK"]),
         'pin_memory': True,
-        'shuffle': True
     }
     sampler_kwargs = {
         "num_replicas": world_size,
         "rank": rank,
-
     }
 
-    sampler_kwargs.update(kwargs)
 
     dataset = PNGDataset(args.data_directory, GenericConfig())
     sampler = create_sampler(dataset, GenericConfig(), **sampler_kwargs)
