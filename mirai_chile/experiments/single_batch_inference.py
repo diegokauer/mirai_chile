@@ -47,6 +47,7 @@ def main(args):
             data["images"].to(device)
             for key, val in data["batch"].items():
                 data["batch"][key] = val.to(device)
+                print(key, data["batch"][key].device)
 
             logits, transformer_hidden, encoder_hidden = model(data["images"], data["batch"])
 
