@@ -92,7 +92,7 @@ def main(args):
 
     sampler_kwargs.update(kwargs)
 
-    dataset = PNGDataset(args.data_directory)
+    dataset = PNGDataset(args.data_directory, GenericConfig())
     sampler = create_sampler(dataset, GenericConfig(), **sampler_kwargs)
     dataloader = create_dataloader(dataset, GenericConfig(), **kwargs.update({"sampler": sampler}))
 
