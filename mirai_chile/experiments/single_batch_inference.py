@@ -3,6 +3,7 @@ import os
 
 import torch
 import pandas as pd
+from line_profiler import profile
 
 from mirai_chile.models.mirai_model import MiraiChile
 from mirai_chile.models.cumulative_probability_layer import Cumulative_Probability_Layer
@@ -10,6 +11,7 @@ from mirai_chile.configs.mirai_base_config import MiraiBaseConfigEval
 from mirai_chile.configs.generic_config import GenericConfig
 from mirai_chile.data.generate_dataset import create_dataloader
 
+@profile
 def main(args):
     if torch.cuda.is_available():
         device = torch.device("cuda")

@@ -2,6 +2,7 @@
 # Project Specific
 /mirai_chile/data/examples/*
 /mirai_chile/data/output/*
+**/*.lprof
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
