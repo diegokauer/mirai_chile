@@ -114,7 +114,7 @@ if __name__ == "__main__":
     parser.add_argument('data_directory', type=str, help="path of the directory of files")
     parser.add_argument('--result_dir', type=str, help="Directory for the outputs", default=".")
     args = parser.parse_args()
-    # main(args)
+    main(args)
     combine_csv(args.result_dir, "logits")
     combine_csv(args.result_dir, "transformer_hidden")
     combine_csv(args.result_dir, "encoder_hidden")
