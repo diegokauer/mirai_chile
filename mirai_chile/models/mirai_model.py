@@ -62,6 +62,7 @@ class MiraiChile(nn.Module):
         return hidden
 
     def transformer_forward(self, x, batch):
+        self._transformer.to(self.args.device)
         time_seq, view_seq, side_seq = batch['time_seq'], batch['view_seq'], batch['side_seq']
 
         time_seq.to(self.args.device)
