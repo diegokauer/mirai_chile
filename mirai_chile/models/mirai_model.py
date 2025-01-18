@@ -66,7 +66,7 @@ class MiraiChile(nn.Module):
         time_seq, view_seq, side_seq = batch['time_seq'], batch['view_seq'], batch['side_seq']
         masked_x, is_mask = self._transformer.mask_input(x, view_seq.to(self.args.device))
         masked_x = self._transformer.projection_layer(masked_x)
-        transformer_hidden = self._transformer.transformer(masked_x, time_seq, view_seq, side_seq)
+        transformer_hidden = self._transformer.transformer(masked_x, time_seq.to(self.args.device), view_seq.to(self.args.device), side_seq.to(self.args.device))
 
         img_like_hidden = transformer_hidden.transpose(1, 2).unsqueeze(-1)
 
