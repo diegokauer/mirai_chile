@@ -91,7 +91,8 @@ def main(args):
 
     dataset = PNGDataset(args.data_directory, GenericConfig())
     sampler = create_sampler(dataset, GenericConfig(), **sampler_kwargs)
-    dataloader = create_dataloader(dataset, GenericConfig(), **kwargs.update({"sampler": sampler}))
+    kwargs.update({"sampler": sampler})
+    dataloader = create_dataloader(dataset, GenericConfig(), **kwargs)
 
 
     model_args = MiraiBaseConfigEval()
