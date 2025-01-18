@@ -1,38 +1,21 @@
 import argparse
 import os
+from socket import gethostname
 
 import torch
 import pandas as pd
-from line_profiler import profile
+from torch.nn.parallel import DistributedDataParallel as DDP
+import torch.distributed as dist
 
 from mirai_chile.models.mirai_model import MiraiChile
 from mirai_chile.models.cumulative_probability_layer import Cumulative_Probability_Layer
 from mirai_chile.configs.mirai_base_config import MiraiBaseConfigEval
 from mirai_chile.configs.generic_config import GenericConfig
-from mirai_chile.data.generate_dataset import create_dataloader
+from mirai_chile.data.generate_dataset import create_sampler, create_dataloader, PNGDataset
 
-@profile
-def main(args):
-    if torch.cuda.is_available():
-        device = torch.device("cuda")
-    else:
-        device = torch.device("cpu")
 
-    model_args = MiraiBaseConfigEval()
-    model_args.device = device
-    model = MiraiChile(model_args, Cumulative_Probability_Layer)
+def infer(model, device, dataloader):
     model.eval()
-    device = torch.device(device)
-    model.to(device)
-
-    inference_kwargs = {
-        'batch_size': 1,
-        'num_workers': int(os.environ["SLURM_CPUS_PER_TASK"]),
-        'pin_memory': True,
-        'shuffle': True
-    }
-
-    dataloader = create_dataloader(args.data_directory, GenericConfig(), **inference_kwargs)
 
     logits_table = []
     transformer_table = []
@@ -40,8 +23,6 @@ def main(args):
 
     with torch.no_grad():
         for i, data in enumerate(dataloader):
-            if i == args.n_obs - 1:
-                break
 
             identifier = data["identifier"]
             data["images"].to(device)
@@ -68,8 +49,61 @@ def main(args):
         print(f"Inference completed on process")
 
     pd.DataFrame(logits_table).to_csv(os.path.join(args.result_dir, f"logits_rank_test.csv"), index=False)
-    pd.DataFrame(transformer_table).to_csv(os.path.join(args.result_dir, f"transformer_hidden_rank_test.csv"), index=False)
+    pd.DataFrame(transformer_table).to_csv(os.path.join(args.result_dir, f"transformer_hidden_rank_test.csv"),
+                                           index=False)
     pd.DataFrame(encoder_table).to_csv(os.path.join(args.result_dir, f"encoder_hidden_rank_test.csv"), index=False)
+
+def setup(rank, world_size):
+    # initialize the process group
+    dist.init_process_group("nccl", rank=rank, world_size=world_size)
+
+
+def main(args):
+    rank = int(os.environ["SLURM_PROCID"])
+    world_size = int(os.environ["WORLD_SIZE"])
+    gpus_per_node = int(os.environ["SLURM_GPUS_ON_NODE"])
+    assert gpus_per_node == torch.cuda.device_count()
+    print(f"Hello from rank {rank} of {world_size} on {gethostname()} where there are" \
+          f" {gpus_per_node} allocated GPUs per node.", flush=True)
+
+    setup(rank, world_size)
+    if rank == 0: print(f"Group initialized? {dist.is_initialized()}", flush=True)
+
+    local_rank = rank - gpus_per_node * (rank // gpus_per_node)
+    torch.cuda.set_device(local_rank)
+    print(f"host: {gethostname()}, rank: {rank}, local_rank: {local_rank}")
+
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
+
+    kwargs = {
+        'batch_size': 1,
+        'num_workers': int(os.environ["SLURM_CPUS_PER_TASK"]),
+        'pin_memory': True,
+        'shuffle': True
+    }
+    sampler_kwargs = {
+        "num_replicas": world_size,
+        "rank": rank,
+
+    }
+
+    sampler_kwargs.update(kwargs)
+
+    dataset = PNGDataset(args.data_directory)
+    sampler = create_sampler(dataset, GenericConfig(), **sampler_kwargs)
+    dataloader = create_dataloader(dataset, GenericConfig(), **kwargs.update({"sampler": sampler}))
+
+
+    model_args = MiraiBaseConfigEval()
+    model_args.device = local_rank
+    model = MiraiChile(model_args, Cumulative_Probability_Layer)
+    model.to(local_rank)
+    ddp_model = DDP(model, device_ids=[local_rank])
+
+    infer(ddp_model, local_rank, dataloader)
 
 
 if __name__ == "__main__":

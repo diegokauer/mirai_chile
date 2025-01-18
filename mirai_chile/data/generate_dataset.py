@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
+from torch.utils.data.distributed import DistributedSampler
 
 from mirai_chile.data.pre_processing import pre_process_images
 from mirai_chile.configs.generic_config import GenericConfig
@@ -66,7 +67,7 @@ class PNGDataset(Dataset):
 
 
 # Function to create DataLoader
-def create_dataloader(directory, args=GenericConfig(), **kwargs):
+def create_dataloader(dataset, args=GenericConfig(), **kwargs):
     """
     Args:
         directory (str): Directory containing the .png files.
@@ -82,9 +83,33 @@ def create_dataloader(directory, args=GenericConfig(), **kwargs):
     # Generate the DataFrame
 
     # Create the dataset
-    dataset = PNGDataset(directory, args)
+    # dataset = PNGDataset(directory, args)
 
     # Create the DataLoader
     dataloader = DataLoader(dataset, **kwargs)
 
     return dataloader
+
+
+def create_sampler(dataset, args=GenericConfig(), **kwargs):
+    """
+    Args:
+        directory (str): Directory containing the .png files.
+        transform (callable, optional): Optional transform to apply on images.
+        batch_size (int): Batch size for the DataLoader.
+        shuffle (bool): Whether to shuffle the data.
+        save_as_csv (bool): Whether to save the DataFrame as a CSV file.
+        csv_path (str): Path to save the CSV file if save_as_csv is True.
+
+    Returns:
+        DataLoader: PyTorch DataLoader object.
+    """
+    # Generate the DataFrame
+
+    # Create the dataset
+    # dataset = PNGDataset(directory, args)
+
+    # Create the DataLoader
+    dds = DistributedSampler(dataset, **kwargs)
+
+    return dds
