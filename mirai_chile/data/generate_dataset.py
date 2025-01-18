@@ -30,7 +30,11 @@ class PNGDataset(Dataset):
         # Load the images
         images = [row[col] for col in ["path1", "path2", "path3", "path4"]]
 
-        images, batch = pre_process_images(images, self.args)
+        try:
+            images, batch = pre_process_images(images, self.args)
+        except Exception as e:
+            print(f"Skipping index {idx} due to processing error: {e}")
+            raise RuntimeError(f"Index {idx} failed")  # PyTorch will skip this sample automatically.
 
         # Example: Return the images as a dictionary
         return {"images": images, "batch": batch, "identifier": row["index"]}
