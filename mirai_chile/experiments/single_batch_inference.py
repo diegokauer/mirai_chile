@@ -32,7 +32,7 @@ def main(args):
         'shuffle': True
     }
 
-    dataloader = create_dataloader(args.data_directory, GenericConfig(), batch_size=1, **inference_kwargs)
+    dataloader = create_dataloader(args.data_directory, GenericConfig(), **inference_kwargs)
 
     logits_table = []
     transformer_table = []

@@ -64,6 +64,7 @@ class PNGDataset(Dataset):
 
         return df.dropna().reset_index(drop=True)
 
+
 # Function to create DataLoader
 def create_dataloader(directory, args=GenericConfig(), **kwargs):
     """
