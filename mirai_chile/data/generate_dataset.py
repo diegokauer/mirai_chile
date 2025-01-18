@@ -65,7 +65,7 @@ class PNGDataset(Dataset):
         return df.dropna().reset_index(drop=True)
 
 # Function to create DataLoader
-def create_dataloader(directory, args=GenericConfig(), batch_size=1, shuffle=True):
+def create_dataloader(directory, args=GenericConfig(), **kwargs):
     """
     Args:
         directory (str): Directory containing the .png files.
@@ -84,6 +84,6 @@ def create_dataloader(directory, args=GenericConfig(), batch_size=1, shuffle=Tru
     dataset = PNGDataset(directory, args)
 
     # Create the DataLoader
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+    dataloader = DataLoader(dataset, **kwargs)
 
     return dataloader

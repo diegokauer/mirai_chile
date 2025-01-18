@@ -23,7 +23,14 @@ def main(args):
     device = torch.device(device)
     model.to(device)
 
-    dataloader = create_dataloader(args.data_directory, GenericConfig(), batch_size=1)
+    inference_kwargs = {
+        'batch_size': 1,
+        'num_workers': 1,
+        'pin_memory': True,
+        'shuffle': True
+    }
+
+    dataloader = create_dataloader(args.data_directory, GenericConfig(), batch_size=1, **inference_kwargs)
 
     logits_table = []
     transformer_table = []
@@ -31,6 +38,8 @@ def main(args):
 
     with torch.no_grad():
         for i, data in enumerate(dataloader):
+            if i == args.n_obs - 1:
+                break
 
             identifier = data["identifier"]
             data["images"].to(device)
@@ -64,6 +73,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Script to infer data and save logits, and hidden vectors by examination")
     parser.add_argument('data_directory', type=str, help="path of the directory of files")
-    parser.add_argument('result_dir', type=str, help="Directory for the outputs")
+    parser.add_argument('--result_dir', type=str, help="Directory for the outputs", default=".")
+    parser.add_argument('--n_obs', type=int, help="Number of observations to be infered", default=10)
     args = parser.parse_args()
     main(args)
