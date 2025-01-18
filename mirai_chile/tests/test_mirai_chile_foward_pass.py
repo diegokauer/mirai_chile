@@ -3,25 +3,28 @@ import torch
 
 from mirai_chile.models.mirai_model import MiraiChile
 from mirai_chile.configs.mirai_chile_config import MiraiChileConfig
-from mirai_chile.configs.mirai_base_config import MiraiBaseConfig
+from mirai_chile.configs.mirai_base_config import MiraiBaseConfig, MiraiBaseConfigEval
 from mirai_chile.models.pmf_layer import PMFLayer
 from mirai_chile.models.cumulative_probability_layer import Cumulative_Probability_Layer
 from mirai_chile.data.pre_processing import pre_process_images
-from mirai_chile.data.generate_dataset import create_dataloader
+from mirai_chile.data.generate_dataset import create_dataloader, PNGDataset
 
 
 class TestMiraiForwardPass(unittest.TestCase):
     pmf_args = MiraiChileConfig()
     cpl_args = MiraiBaseConfig()
+    eval_args = MiraiBaseConfigEval()
 
     device = 'cpu'
     if torch.cuda.is_available():
         device = 'cuda'
     pmf_args.device = device
     cpl_args.device = device
+    eval_args.device = device
 
     mirai_chile_pmf = MiraiChile(pmf_args, PMFLayer).cpu().eval()
     mirai_base_cpl = MiraiChile(cpl_args, Cumulative_Probability_Layer).cpu().eval()
+    mirai_eval = MiraiChile(eval_args, Cumulative_Probability_Layer).cpu().eval()
 
     batch = {
         "side_seq": torch.tensor([0, 0, 0, 0]),
@@ -38,10 +41,14 @@ class TestMiraiForwardPass(unittest.TestCase):
         "../data/examples/png/000001_1_MLO_R.png"
     ]
 
-    dataloader = create_dataloader("../data/examples/png", pmf_args)
+    dataset = PNGDataset("../data/examples/png", pmf_args)
+    dataloader = create_dataloader(dataset)
+    dataloader_input = next(iter(dataloader))
 
     mirai_chile_pmf.to(device)
     mirai_base_cpl.to(device)
+    mirai_eval.to(device)
+
     single_input.to(device)
     batched_input.to(device)
     for key in batch:
@@ -79,8 +86,15 @@ class TestMiraiForwardPass(unittest.TestCase):
         self.assertEqual(torch.Size([1, 512 * 4]), encoder_hidden.shape)
 
     def test_pre_processing_mirai_single_dataloader(self):
-        input = next(iter(self.dataloader))
+        input = self.dataloader_input
         logit, transformer_hidden, encoder_hidden = self.mirai_base_cpl(input["images"], input["batch"])
+        self.assertEqual(torch.Size([1, 5]), logit.shape)
+        self.assertEqual(torch.Size([1, 612]), transformer_hidden.shape)
+        self.assertEqual(torch.Size([1, 512 * 4]), encoder_hidden.shape)
+
+    def test_pre_processing_mirai_eval_single_dataloader(self):
+        input = self.dataloader_input
+        logit, transformer_hidden, encoder_hidden = self.mirai_eval(input["images"], input["batch"])
         self.assertEqual(torch.Size([1, 5]), logit.shape)
         self.assertEqual(torch.Size([1, 612]), transformer_hidden.shape)
         self.assertEqual(torch.Size([1, 512 * 4]), encoder_hidden.shape)
