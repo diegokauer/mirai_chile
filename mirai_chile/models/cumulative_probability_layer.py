@@ -2,16 +2,18 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from mirai_chile.models.generic_layer import GenericLayer
 
-class Cumulative_Probability_Layer(nn.Module):
-    def __init__(self, num_features, args, calibrator=None):
-        super(Cumulative_Probability_Layer, self).__init__()
-        max_followup = args.max_followup
-        self.args = args
-        self.hazard_fc = nn.Linear(num_features,  max_followup)
+
+class CumulativeProbabilityLayer(GenericLayer):
+    def __init__(self, num_features, args=None, calibrator=None):
+        super().__init__()
+        if not (args is None):
+            self.args = args
+        self.hazard_fc = nn.Linear(num_features,  args.max_followup)
         self.base_hazard_fc = nn.Linear(num_features, 1)
         self.relu = nn.ReLU(inplace=True)
-        mask = torch.ones([max_followup, max_followup])
+        mask = torch.ones([args.max_followup, args.max_followup])
         mask = torch.tril(mask, diagonal=0)
         mask = torch.nn.Parameter(torch.t(mask), requires_grad=False)
         self.register_parameter('upper_triagular_mask', mask)

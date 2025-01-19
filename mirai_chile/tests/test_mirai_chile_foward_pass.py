@@ -1,13 +1,13 @@
 import unittest
-import torch
 
-from mirai_chile.models.mirai_model import MiraiChile
-from mirai_chile.configs.mirai_chile_config import MiraiChileConfig
+import torch
 from mirai_chile.configs.mirai_base_config import MiraiBaseConfig, MiraiBaseConfigEval
-from mirai_chile.models.pmf_layer import PMFLayer
-from mirai_chile.models.cumulative_probability_layer import Cumulative_Probability_Layer
-from mirai_chile.data.pre_processing import pre_process_images
+from mirai_chile.configs.mirai_chile_config import MiraiChileConfig
 from mirai_chile.data.generate_dataset import create_dataloader, PNGDataset
+from mirai_chile.data.pre_processing import pre_process_images
+from mirai_chile.models.cumulative_probability_layer import CumulativeProbabilityLayer
+from mirai_chile.models.mirai_model import MiraiChile
+from mirai_chile.models.pmf_layer import PMFLayer
 
 
 class TestMiraiForwardPass(unittest.TestCase):
@@ -18,13 +18,10 @@ class TestMiraiForwardPass(unittest.TestCase):
     device = 'cpu'
     if torch.cuda.is_available():
         device = 'cuda'
-    pmf_args.device = device
-    cpl_args.device = device
-    eval_args.device = device
 
-    mirai_chile_pmf = MiraiChile(pmf_args, PMFLayer).cpu().eval()
-    mirai_base_cpl = MiraiChile(cpl_args, Cumulative_Probability_Layer).cpu().eval()
-    mirai_eval = MiraiChile(eval_args, Cumulative_Probability_Layer).cpu().eval()
+    mirai_chile_pmf = MiraiChile(pmf_args, PMFLayer)
+    mirai_base_cpl = MiraiChile(cpl_args, CumulativeProbabilityLayer)
+    mirai_eval = MiraiChile(eval_args, CumulativeProbabilityLayer)
 
     batch = {
         "side_seq": torch.tensor([0, 0, 0, 0]),
@@ -45,9 +42,9 @@ class TestMiraiForwardPass(unittest.TestCase):
     dataloader = create_dataloader(dataset)
     dataloader_input = next(iter(dataloader))
 
-    mirai_chile_pmf.to(device)
-    mirai_base_cpl.to(device)
-    mirai_eval.to(device)
+    mirai_chile_pmf.to_device(device)
+    mirai_base_cpl.to_device(device)
+    mirai_eval.to_device(device)
 
     single_input.to(device)
     batched_input.to(device)
