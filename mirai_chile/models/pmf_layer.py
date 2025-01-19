@@ -1,16 +1,43 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
+from mirai_chile.models.generic_layer import GenericLayer
 
-class PMFLayer(nn.Module):
-    def __init__(self, num_features, args):
-        super(PMFLayer, self).__init__()
-        max_followup = args.max_followup
-        self.args = args
-        self.pmf = nn.Linear(num_features, max_followup)
+class PMFLayer(GenericLayer):
+    def __init__(self, num_features, args=None):
+        super().__init__()
+        if not (args is None):
+            self.args = args
+        self.pmf = nn.Linear(num_features, self.args.max_followup)
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
         hidden = self.pmf(x)
         pmf = self.relu(hidden)
         return pmf
+
+    def logit_to_cancer_prob(self, logit):
+        """
+        Converts logits to cancer survival probabilities.
+
+        :param logits: A tensor of shape (B, T) where B is the batch size and T is the number of time intervals.
+        :return: A tensor representing the survival probabilities.
+        """
+        device = self.args.device
+        B, N = logit.size()
+
+        # Append a zero column to logits
+        logit = torch.cat((logit, torch.zeros(B, 1, device=device)), dim=1)
+        N += 1
+
+        # Create lower triangular matrix without diagonal
+        l_t_mat = torch.tril(torch.ones(N, N, device=device), diagonal=-1)
+
+        # Compute PMF (Probability Mass Function)
+        pmf = F.softmax(logit, dim=1)  # Exclude the last column
+
+        # Compute survival probabilities
+        s = torch.matmul(pmf, l_t_mat)
+
+        return pmf[:, :-1], s[:, :-1]
