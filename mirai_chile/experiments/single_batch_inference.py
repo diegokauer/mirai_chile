@@ -1,15 +1,15 @@
 import argparse
 import os
 
-import torch
 import pandas as pd
+import torch
 from line_profiler import profile
-
-from mirai_chile.models.mirai_model import MiraiChile
-from mirai_chile.models.cumulative_probability_layer import Cumulative_Probability_Layer
-from mirai_chile.configs.mirai_base_config import MiraiBaseConfigEval
 from mirai_chile.configs.generic_config import GenericConfig
+from mirai_chile.configs.mirai_base_config import MiraiBaseConfigEval
 from mirai_chile.data.generate_dataset import create_dataloader
+from mirai_chile.models.cumulative_probability_layer import Cumulative_Probability_Layer
+from mirai_chile.models.mirai_model import MiraiChile
+
 
 @profile
 def main(args):
@@ -68,12 +68,14 @@ def main(args):
         print(f"Inference completed on process")
 
     pd.DataFrame(logits_table).to_csv(os.path.join(args.result_dir, f"logits_rank_test.csv"), index=False)
-    pd.DataFrame(transformer_table).to_csv(os.path.join(args.result_dir, f"transformer_hidden_rank_test.csv"), index=False)
+    pd.DataFrame(transformer_table).to_csv(os.path.join(args.result_dir, f"transformer_hidden_rank_test.csv"),
+                                           index=False)
     pd.DataFrame(encoder_table).to_csv(os.path.join(args.result_dir, f"encoder_hidden_rank_test.csv"), index=False)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Script to infer data and save logits, and hidden vectors by examination")
+    parser = argparse.ArgumentParser(
+        description="Script to infer data and save logits, and hidden vectors by examination")
     parser.add_argument('data_directory', type=str, help="path of the directory of files")
     parser.add_argument('--result_dir', type=str, help="Directory for the outputs", default=".")
     parser.add_argument('--n_obs', type=int, help="Number of observations to be infered", default=10)

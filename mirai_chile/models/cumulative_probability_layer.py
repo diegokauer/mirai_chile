@@ -10,7 +10,7 @@ class CumulativeProbabilityLayer(GenericLayer):
         super().__init__()
         if not (args is None):
             self.args = args
-        self.hazard_fc = nn.Linear(num_features,  args.max_followup)
+        self.hazard_fc = nn.Linear(num_features, args.max_followup)
         self.base_hazard_fc = nn.Linear(num_features, 1)
         self.relu = nn.ReLU(inplace=True)
         mask = torch.ones([args.max_followup, args.max_followup])
@@ -37,11 +37,11 @@ class CumulativeProbabilityLayer(GenericLayer):
     def forward(self, x):
         if self.args.make_probs_indep:
             return self.hazards(x)
-#        hazards = self.hazard_fc(x)
+        #        hazards = self.hazard_fc(x)
         hazards = self.hazards(x)
-        B, T = hazards.size() #hazards is (B, T)
-        expanded_hazards = hazards.unsqueeze(-1).expand(B, T, T) #expanded_hazards is (B,T, T)
-        masked_hazards = expanded_hazards * self.upper_triagular_mask # masked_hazards now (B,T, T)
+        B, T = hazards.size()  # hazards is (B, T)
+        expanded_hazards = hazards.unsqueeze(-1).expand(B, T, T)  # expanded_hazards is (B,T, T)
+        masked_hazards = expanded_hazards * self.upper_triagular_mask  # masked_hazards now (B,T, T)
         cum_prob = torch.sum(masked_hazards, dim=1) + self.base_hazard_fc(x)
         return cum_prob
 

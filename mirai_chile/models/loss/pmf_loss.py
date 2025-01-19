@@ -1,6 +1,4 @@
 import torch
-from torch import nn
-import torch.nn.functional as F
 
 from mirai_chile.models.loss.generic_loss import GenericLoss
 

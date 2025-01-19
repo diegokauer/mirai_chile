@@ -1,8 +1,5 @@
-import torch
-from torch import nn
-import torch.nn.functional as F
-
 from mirai_chile.configs.generic_config import GenericConfig
+from torch import nn
 
 
 class GenericLoss(nn.Module):

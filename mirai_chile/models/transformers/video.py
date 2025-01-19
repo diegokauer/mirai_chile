@@ -1,7 +1,8 @@
 import random
+
 import torchvision
-from mirai_chile.models.transformers.factory import RegisterImageTransformer
 from mirai_chile.models.transformers.abstract import Abstract_transformer
+from mirai_chile.models.transformers.factory import RegisterImageTransformer
 
 
 @RegisterImageTransformer("scale_3d")

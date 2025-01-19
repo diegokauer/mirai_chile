@@ -1,10 +1,10 @@
 from collections.abc import Sequence
 
-import torchvision
-import torch
-from mirai_chile.models.transformers.factory import RegisterTensorTransformer
 import numpy as np
+import torch
+import torchvision
 from mirai_chile.models.transformers.abstract import Abstract_transformer
+from mirai_chile.models.transformers.factory import RegisterTensorTransformer
 
 
 @RegisterTensorTransformer("normalize_2d")
@@ -57,6 +57,7 @@ class CutOut(Abstract_transformer):
             image[y_min:y_max, x_min:x_max] *= mask
 
             return image
+
         self.transform = torchvision.transforms.Lambda(cutout)
 
     def __call__(self, img, additional=None):

@@ -2,17 +2,16 @@ import argparse
 import os
 from socket import gethostname
 
-import torch
 import pandas as pd
-from torch.nn.parallel import DistributedDataParallel as DDP
+import torch
 import torch.distributed as dist
-
-from mirai_chile.models.mirai_model import MiraiChile
-from mirai_chile.models.cumulative_probability_layer import Cumulative_Probability_Layer
-from mirai_chile.configs.mirai_base_config import MiraiBaseConfigEval
 from mirai_chile.configs.generic_config import GenericConfig
+from mirai_chile.configs.mirai_base_config import MiraiBaseConfigEval
 from mirai_chile.data.generate_dataset import create_sampler, create_dataloader, PNGDataset
 from mirai_chile.experiments.utils.csv import combine_csv
+from mirai_chile.models.cumulative_probability_layer import Cumulative_Probability_Layer
+from mirai_chile.models.mirai_model import MiraiChile
+from torch.nn.parallel import DistributedDataParallel as DDP
 
 
 def infer(model, device, dataloader, rank):
@@ -24,17 +23,13 @@ def infer(model, device, dataloader, rank):
 
     with torch.no_grad():
         for i, data in enumerate(dataloader):
-            # if i == 99:
-            #     break
             try:
                 identifier = data["identifier"]
                 data["images"].to(device)
                 for key, val in data["batch"].items():
                     data["batch"][key] = val.to(device)
 
-
                 logits, transformer_hidden, encoder_hidden = model(data["images"], data["batch"])
-
 
                 for i, id in enumerate(identifier):
                     logits_table.append(
@@ -57,6 +52,7 @@ def infer(model, device, dataloader, rank):
     pd.DataFrame(transformer_table).to_csv(os.path.join(args.result_dir, f"transformer_hidden_rank_{rank}.csv"),
                                            index=False)
     pd.DataFrame(encoder_table).to_csv(os.path.join(args.result_dir, f"encoder_hidden_rank_{rank}.csv"), index=False)
+
 
 def setup(rank, world_size):
     # initialize the process group
@@ -88,24 +84,23 @@ def main(args):
         "rank": rank,
     }
 
-
     dataset = PNGDataset(args.data_directory, GenericConfig())
     sampler = create_sampler(dataset, GenericConfig(), **sampler_kwargs)
     kwargs.update({"sampler": sampler})
     dataloader = create_dataloader(dataset, GenericConfig(), **kwargs)
 
-
     model_args = MiraiBaseConfigEval()
     model_args.device = local_rank
     model = MiraiChile(model_args, Cumulative_Probability_Layer)
-    model.to(local_rank)
+    model.to_device(local_rank)
     ddp_model = DDP(model, device_ids=[local_rank])
 
     infer(ddp_model, local_rank, dataloader, rank)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Script to infer data and save logits, and hidden vectors by examination")
+    parser = argparse.ArgumentParser(
+        description="Script to infer data and save logits, and hidden vectors by examination")
     parser.add_argument('data_directory', type=str, help="path of the directory of files")
     parser.add_argument('--result_dir', type=str, help="Directory for the outputs", default=".")
     args = parser.parse_args()

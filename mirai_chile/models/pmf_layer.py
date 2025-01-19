@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 from mirai_chile.models.generic_layer import GenericLayer
 
+
 class PMFLayer(GenericLayer):
     def __init__(self, num_features, args=None):
         super().__init__()

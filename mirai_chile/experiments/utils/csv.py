@@ -1,6 +1,7 @@
-import modin.pandas as pd
 import os
 from glob import glob
+
+import modin.pandas as pd
 
 
 def combine_csv(directory, file_pattern):

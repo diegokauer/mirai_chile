@@ -1,16 +1,15 @@
 import os
 import traceback
 
+import mirai_chile.models.transformers.factory as transformer_factory
+import numpy as np
 import torch
 from PIL import Image
-import numpy as np
-
-from mirai_chile.models.utils import parsing
 from mirai_chile.models.transformers.basic import ComposeTrans
-import mirai_chile.models.transformers.factory as transformer_factory
+from mirai_chile.models.utils import parsing
 
 
-def pre_process_images(png_list, args, direct_call = False):
+def pre_process_images(png_list, args, direct_call=False):
     images = read_pngs(png_list)
 
     test_image_transformers = parsing.parse_transformers(args.test_image_transformers)
