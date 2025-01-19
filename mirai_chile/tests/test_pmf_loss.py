@@ -3,6 +3,7 @@ import unittest
 import torch
 
 from mirai_chile.models.loss.pmf_loss import PMFLoss
+from mirai_chile.models.pmf_layer import PMFLayer
 
 
 class PMFLossTestCase(unittest.TestCase):
@@ -12,6 +13,7 @@ class PMFLossTestCase(unittest.TestCase):
         device = 'cuda'
 
     loss = PMFLoss().to_device(device)
+    pmf_layer = PMFLayer(10).to_device(device)
 
     logit = torch.tensor([[-0.810,-0.724,-0.724,-0.724,-0.724]]).to(device)
     pmf = torch.tensor([[0.1, 0.2, 0.1, 0.3, 0.05]]).to(device)
