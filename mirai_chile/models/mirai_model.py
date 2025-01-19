@@ -16,7 +16,7 @@ class MiraiChile(nn.Module):
             transformer=None,
             loss_function=GenericLoss()
     ):
-        super(MiraiChile, self).__init__()
+        super().__init__()
         self.args = args
         self._encoder = encoder
         if encoder is None:
