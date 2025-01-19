@@ -1,11 +1,21 @@
 import os
 
 import torch
+from mirai_chile.configs.generic_config import GenericConfig
+from mirai_chile.models.generic_layer import GenericLayer
+from mirai_chile.models.loss.generic_loss import GenericLoss
 from torch import nn
 
 
 class MiraiChile(nn.Module):
-    def __init__(self, args, head, encoder=None, transformer=None):
+    def __init__(
+            self,
+            args=GenericConfig(),
+            head=GenericLayer(),
+            encoder=None,
+            transformer=None,
+            loss_function=GenericLoss()
+    ):
         super(MiraiChile, self).__init__()
         self.args = args
         self._encoder = encoder
@@ -14,6 +24,7 @@ class MiraiChile(nn.Module):
         self.head = head(612, args)
         if transformer is None:
             self.load_transformer(args.transformer_path)
+        self.loss_function = loss_function
 
         # Freeze backbone of model
         for param in self._encoder.parameters():
@@ -104,3 +115,10 @@ class MiraiChile(nn.Module):
     def load_transformer(self, path):
         model_path = os.path.expanduser(path)
         self._transformer = torch.load(model_path, map_location='cpu').to(self.args.device)
+
+    def to_device(self, device):
+        self.args.device = device
+        self.head.to_device(device)
+        self.loss_function.to_device(device)
+        self.to(device)
+        return self
