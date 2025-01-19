@@ -10,7 +10,7 @@ from torch.utils.data.distributed import DistributedSampler
 # Assuming generate_data_dataframe is already defined
 # Add this custom dataset class
 class PNGDataset(Dataset):
-    def __init__(self, directory, args):
+    def __init__(self, directory, args=GenericConfig()):
         """
         Args:
             dataframe (pd.DataFrame): DataFrame containing the file paths.
@@ -35,7 +35,7 @@ class PNGDataset(Dataset):
             raise RuntimeError(f"Index {idx} failed")  # PyTorch will skip this sample automatically.
 
         # Example: Return the images as a dictionary
-        return {"images": images, "batch": batch, "identifier": row["index"]}
+        return {"images": images, "batch": batch, "identifier": row["identifier"]}
 
     def save_as_csv(self, csv_path):
         # Save to a CSV or print
@@ -63,7 +63,8 @@ class PNGDataset(Dataset):
 
         df = pd.DataFrame.from_dict(file_dict, orient="index")
         df.reset_index(inplace=True)
-        df.rename(columns={"CC_L": "path1", "CC_R": "path2", "MLO_L": "path3", "MLO_R": "path4"}, inplace=True)
+        df.rename(columns={"CC_L": "path1", "CC_R": "path2", "MLO_L": "path3", "MLO_R": "path4", "index": "identifier"},
+                  inplace=True)
 
         return df.dropna().reset_index(drop=True)
 
