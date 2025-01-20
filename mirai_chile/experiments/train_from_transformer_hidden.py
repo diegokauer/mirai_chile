@@ -14,7 +14,7 @@ from mirai_chile.models.pmf_layer import PMFLayer
 from mirai_chile.predict import predict_probas
 from mirai_chile.test import test_model
 from mirai_chile.train import train_model
-from torch.optim.lr_scheduler import StepLR
+from torch.optim.lr_scheduler import ExponentialLR
 from torch.utils.data import DataLoader
 
 
@@ -61,7 +61,7 @@ def main(args):
     test_dataloader = DataLoader(test_dataset, **test_kwargs)
 
     optimizer = optim.Adam(model.parameters())
-    scheduler = StepLR(optimizer, 1)
+    scheduler = ExponentialLR(optimizer, 0.95)
 
     eval_pipe = EvaluationPipeline()
     eval_pipe.add_metric(YearlyROCAUCFunction(), {"max_followup": 5})
