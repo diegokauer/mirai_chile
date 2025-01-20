@@ -100,6 +100,26 @@ class PMFLossTestCase(unittest.TestCase):
                 loss.backward()
             self.assertEqual(torch.Size((1, 5)), logit.grad.shape)
 
+    def test_pmf_excedes_max_followup_d_1(self):
+        logit = torch.ones((2, 5), device=self.device)
+        pmf = torch.zeros((2, 5), device=self.device)
+        s = torch.ones((2, 5), device=self.device)
+        t = torch.tensor([[10], [5]], device=self.device)
+        d = torch.tensor([[1], [1]], device=self.device)
+        loss = self.loss(logit, pmf, s, t, d).cpu()
+
+        self.assertEqual(-torch.log(torch.tensor(1)), loss)
+
+    def test_pmf_excedes_max_followup_d_1(self):
+        logit = torch.ones((2, 5), device=self.device)
+        pmf = torch.zeros((2, 5), device=self.device)
+        s = torch.ones((2, 5), device=self.device)
+        t = torch.tensor([[10], [5]], device=self.device)
+        d = torch.tensor([[0], [0]], device=self.device)
+        loss = self.loss(logit, pmf, s, t, d).cpu()
+
+        self.assertEqual(-torch.log(torch.tensor(1)), loss)
+
 
 if __name__ == '__main__':
     unittest.main()

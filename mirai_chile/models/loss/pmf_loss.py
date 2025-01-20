@@ -32,6 +32,9 @@ class PMFLoss(GenericLoss):
         """
         device = self.args.device
 
+        d[(t >= self.args.max_followup) & (d == 1)] = 0
+        t = torch.clamp(t, max=self.args.max_followup - 1)  # Make t in range[0, 4]
+
         # Ensure t is used correctly
         batch_indices = torch.arange(logit.size(0), device=logit.device)
         pmf_t = pmf[batch_indices, t]

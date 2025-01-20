@@ -4,6 +4,7 @@
 /mirai_chile/data/output/*
 /mirai_chile/data/dataset/*
 **/*.lprof
+**/scratch.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
