@@ -46,14 +46,14 @@ def main(args):
     del dataset
 
     train_kwargs = {
-        # "num_workers": 1,
+        "num_workers": int(os.environ["SLURM_CPUS_PER_TASK"]),
         "batch_size": 32,
         "shuffle": True
     }
     train_dataloader = DataLoader(train_dataset, **train_kwargs)
 
     test_kwargs = {
-        # "num_workers": 20,
+        "num_workers": int(os.environ["SLURM_CPUS_PER_TASK"]),
         "batch_size": 32,
         "shuffle": True
     }
