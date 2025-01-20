@@ -1,0 +1,81 @@
+import argparse
+
+import torch
+import torch.optim as optim
+from torch.optim.lr_scheduler import StepLR
+from torch.utils.data import DataLoader
+
+from mirai_chile.configs.train_config import TrainTransformerHiddenConfig
+from mirai_chile.data.transformer_hidden import TransformerHiddenDataset
+from mirai_chile.models.loss.pmf_loss import PMFLoss
+from mirai_chile.models.mirai_model import MiraiChile
+from mirai_chile.models.pmf_layer import PMFLayer
+from mirai_chile.test import test_model
+from mirai_chile.train import train_model
+
+
+def main(args):
+    epochs = args.epochs
+    seed = args.seed
+    dry_run = args.dry_run
+    save_model = args.save_model
+    save_each_epoch = args.save_each_epoch
+
+    torch.manual_seed(seed)
+
+    device = 'cpu'
+    if torch.cuda.is_available():
+        device = 'cuda'
+
+    args = TrainTransformerHiddenConfig()
+    loss_function = PMFLoss(args)
+    head = PMFLayer(612, args)
+    model = MiraiChile(args=args, loss_function=loss_function, head=head)
+    model.to_device(device)
+
+    print("Loading Datasets...")
+    dataset = TransformerHiddenDataset()
+    train_dataset = dataset.get_split("train")
+    test_dataset = dataset.get_split("dev")
+    del dataset
+
+    train_kwargs = {
+        # "num_workers": 1,
+        "batch_size": 32,
+        "shuffle": True
+    }
+    train_dataloader = DataLoader(train_dataset, **train_kwargs)
+
+    test_kwargs = {
+        # "num_workers": 20,
+        "batch_size": 32,
+        "shuffle": True
+    }
+    test_dataloader = DataLoader(test_dataset, **test_kwargs)
+
+    optimizer = optim.Adam(model.parameters())
+    scheduler = StepLR(optimizer, 1)
+
+    print("Beginning training...")
+    for epoch in range(epochs):
+        print(f"Epoch: {epoch}")
+        train_model(model, "transformer_hidden", device, train_dataloader, optimizer, epoch, dry_run)
+        test_model(model, "transformer_hidden", device, test_dataloader, dry_run)
+        if save_each_epoch and save_model:
+            torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_logit_pmf_epoch_{epoch}.pt")
+        scheduler.step()
+
+    if save_model:
+        torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_logit_pmf_final.pt")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Train model")
+    parser.add_argument('--epochs', type=int, help="number of epochs", default=10)
+    parser.add_argument('--seed', type=int, help="Random seed", default=1999)
+    parser.add_argument('--dry-run', type=bool, help="Dry run model", default=False)
+    parser.add_argument('--save-model', type=bool, help="Save model", default=True)
+    parser.add_argument('--save-each-epoch', type=bool, help="Save model on each epoch", default=True)
+    args = parser.parse_args()
+    main(args)
