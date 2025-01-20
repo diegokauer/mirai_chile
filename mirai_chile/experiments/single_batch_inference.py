@@ -4,11 +4,10 @@ import os
 import pandas as pd
 import torch
 from line_profiler import profile
-
 from mirai_chile.configs.abstract_config import AbstractConfig
 from mirai_chile.configs.mirai_base_config import MiraiBaseConfigEval
 from mirai_chile.data.generate_dataset import create_dataloader
-from mirai_chile.models.cumulative_probability_layer import Cumulative_Probability_Layer
+from mirai_chile.models.cumulative_probability_layer import CumulativeProbabilityLayer
 from mirai_chile.models.mirai_model import MiraiChile
 
 
@@ -21,7 +20,7 @@ def main(args):
 
     model_args = MiraiBaseConfigEval()
     model_args.device = device
-    model = MiraiChile(model_args, Cumulative_Probability_Layer)
+    model = MiraiChile(model_args, CumulativeProbabilityLayer)
     model.eval()
     device = torch.device(device)
     model.to(device)
