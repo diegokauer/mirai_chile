@@ -32,8 +32,8 @@ def main(args):
         'shuffle': True
     }
 
-    dataset = DataLoader(PNGDataset(args.data_directory))
-    dataloader = create_dataloader(dataset, **inference_kwargs)
+    dataset = PNGDataset(args.data_directory)
+    dataloader = DataLoader(dataset, **inference_kwargs)
 
     logits_table = []
     transformer_table = []
