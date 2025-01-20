@@ -2,11 +2,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from mirai_chile.configs.generic_config import GenericConfig
 from mirai_chile.models.generic_layer import GenericLayer
 
 
 class CumulativeProbabilityLayer(GenericLayer):
-    def __init__(self, num_features, args=None, calibrator=None):
+    def __init__(self, num_features, args=GenericConfig(), calibrator=None):
         super().__init__()
         if not (args is None):
             self.args = args

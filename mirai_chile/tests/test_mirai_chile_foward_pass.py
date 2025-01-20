@@ -1,6 +1,7 @@
 import unittest
 
 import torch
+
 from mirai_chile.configs.mirai_base_config import MiraiBaseConfig, MiraiBaseConfigEval
 from mirai_chile.configs.mirai_chile_config import MiraiChileConfig
 from mirai_chile.data.generate_dataset import create_dataloader, PNGDataset
@@ -19,9 +20,9 @@ class TestMiraiForwardPass(unittest.TestCase):
     if torch.cuda.is_available():
         device = 'cuda'
 
-    mirai_chile_pmf = MiraiChile(pmf_args, PMFLayer)
-    mirai_base_cpl = MiraiChile(cpl_args, CumulativeProbabilityLayer)
-    mirai_eval = MiraiChile(eval_args, CumulativeProbabilityLayer)
+    mirai_chile_pmf = MiraiChile(pmf_args, PMFLayer(612))
+    mirai_base_cpl = MiraiChile(cpl_args, CumulativeProbabilityLayer(612))
+    mirai_eval = MiraiChile(eval_args, CumulativeProbabilityLayer(612))
 
     batch = {
         "side_seq": torch.tensor([0, 0, 0, 0]),

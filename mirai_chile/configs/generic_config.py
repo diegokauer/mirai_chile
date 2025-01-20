@@ -2,6 +2,7 @@ class GenericConfig:
     max_followup = 5
     model_parallel = False
     device = None
+    precompute_mode = False
     encoder_path = "~/.mirai/snapshots/mgh_mammo_MIRAI_Base_May20_2019.p"
     transformer_path = "~/.mirai/snapshots/mgh_mammo_cancer_MIRAI_Transformer_Jan13_2020.p"
     freeze_encoder = True

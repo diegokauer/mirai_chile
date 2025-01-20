@@ -1,10 +1,11 @@
 import os
 
 import torch
+from torch import nn
+
 from mirai_chile.configs.generic_config import GenericConfig
 from mirai_chile.models.generic_layer import GenericLayer
 from mirai_chile.models.loss.generic_loss import GenericLoss
-from torch import nn
 
 
 class MiraiChile(nn.Module):
@@ -21,7 +22,7 @@ class MiraiChile(nn.Module):
         self._encoder = encoder
         if encoder is None:
             self.load_encoder(args.encoder_path)
-        self.head = head(612, args)
+        self.head = head
         if transformer is None:
             self.load_transformer(args.transformer_path)
         self.loss_function = loss_function
@@ -35,19 +36,25 @@ class MiraiChile(nn.Module):
             param.requires_grad = not args.freeze_risk_factor_layer
 
     def forward(self, x, batch=None):
-        if hasattr(self.args, "use_precomputed_encoder_hidden") and self.use_precomputed_encoder_hidden:
+        if hasattr(self.args, "use_precomputed_encoder_hidden") and self.args.use_precomputed_encoder_hidden:
+            B = x.size(1)
             encoder_hidden = x
-        else:
+            encoder_hidden = encoder_hidden.view(B, 4, -1)
+        elif not self.args.precompute_mode:
             B, C, N, H, W = x.size()
             x = x.transpose(1, 2).contiguous().view(B * N, C, H, W)
             x = self.encoder_forward(x)
             encoder_hidden = self.aggregate_and_classify_encoder(x)
 
-        if hasattr(self.args, "use_precomputed_transformer_hidden") and self.use_precomputed_transformer_hidden:
+        if hasattr(self.args, "use_precomputed_transformer_hidden") and self.args.use_precomputed_transformer_hidden:
+            B = x.size(1)
             transformer_hidden = x
-        else:
+            encoder_hidden = torch.zeros((B, 4, 1))
+        elif not self.args.precompute_mode:
             encoder_hidden = encoder_hidden.view(B, N, -1)
             transformer_hidden = self.transformer_forward(encoder_hidden, batch)
+
+        transformer_hidden = transformer_hidden[:, :512]
 
         if hasattr(self.args, "use_original_aggregate") and self.args.use_original_aggregate:
             logit, transformer_hidden = self._transformer.aggregate_and_classify(transformer_hidden)
@@ -120,4 +127,6 @@ class MiraiChile(nn.Module):
         self.head.to_device(device)
         self.loss_function.to_device(device)
         self.to(device)
+        self._transformer.to(device)
+        self._encoder.to(device)
         return self
