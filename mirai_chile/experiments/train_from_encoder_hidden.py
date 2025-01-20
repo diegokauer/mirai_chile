@@ -73,11 +73,11 @@ def main(args):
         train_model(model, "encoder_hidden", device, train_dataloader, optimizer, epoch, dry_run)
         test_model(model, "encoder_hidden", device, dev_dataloader, eval_pipe, dry_run)
         if save_each_epoch and save_model:
-            torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_logit_pmf_epoch_{epoch}.pt")
+            torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_encoder_pmf_epoch_{epoch}.pt")
         scheduler.step()
 
     if save_model:
-        torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_logit_pmf_final.pt")
+        torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_encoder_pmf_final.pt")
 
     print("Predicting future cancer probabilities...")
     predict_probas(model, "encoder_hidden", device, test_dataloader, dry_run)
