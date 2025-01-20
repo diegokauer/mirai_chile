@@ -33,7 +33,8 @@ def main(args):
     loss_function = PMFLoss(args)
     head = PMFLayer(612, args)
     model = MiraiChile(args=args, loss_function=loss_function, head=head)
-    model.to_device(device)
+    model.args.device = device
+    model.to(device)
 
     print("Loading Datasets...")
     dataset = EncoderHiddenDataset(
@@ -47,14 +48,14 @@ def main(args):
     del dataset
 
     train_kwargs = {
-        # "num_workers": 1,
+        'num_workers': int(os.environ["SLURM_CPUS_PER_TASK"]),
         "batch_size": 32,
         "shuffle": True
     }
     train_dataloader = DataLoader(train_dataset, **train_kwargs)
 
     test_kwargs = {
-        # "num_workers": 20,
+        'num_workers': int(os.environ["SLURM_CPUS_PER_TASK"]),
         "batch_size": 32,
         "shuffle": True
     }
