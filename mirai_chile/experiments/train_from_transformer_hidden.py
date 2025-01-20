@@ -25,7 +25,7 @@ def main(args):
     save_model = args.save_model
     save_each_epoch = args.save_each_epoch
 
-    torch.manual_seed(seed)
+    # torch.manual_seed(seed)
 
     device = torch.device("cpu")
     if torch.cuda.is_available():
