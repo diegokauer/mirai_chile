@@ -1,12 +1,13 @@
-import modin.pandas as pd
+import pandas as pd
+import torch
 from torch.utils.data import Dataset
 
 
 class TransformerHiddenDataset(Dataset):
     def __init__(self,
                  dataframe=None,
-                 transformer_hidden_table_path="./dataset/combined_transformer_hidden.csv",
-                 outcomes_table_path="./dataset/outcomes.csv",
+                 transformer_hidden_table_path="mirai_chile/data/dataset/combined_transformer_hidden.csv",
+                 outcomes_table_path="mirai_chile/data/dataset/outcomes.csv",
                  nrows=None):
         super().__init__()
         self.dataframe = dataframe
@@ -20,14 +21,14 @@ class TransformerHiddenDataset(Dataset):
         return len(self.dataframe)
 
     def __getitem__(self, item):
-        row = self.dataframe.iloc[idx]
+        row = self.dataframe.iloc[item]
 
         transformer_hidden = [row[col] for col in self.dataframe.columns if "hidden" in col]
 
         return {
-            "transformer_hidden": transformer_hidden,
-            "time_to_event": row["time_to_event"],
-            "cancer": row["cancer"],
+            "transformer_hidden": torch.tensor(transformer_hidden, dtype=torch.float32),
+            "time_to_event": torch.tensor(row["time_to_event"]),
+            "cancer": torch.tensor(row["cancer"]).long(),
             "machine_manufacturer": row["machine_manufacturer"],
             "identifier": row["identifier"]
         }

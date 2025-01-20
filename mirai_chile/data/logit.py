@@ -1,4 +1,5 @@
-import modin.pandas as pd
+import pandas as pd
+import torch
 from torch.utils.data import Dataset
 
 
@@ -20,14 +21,14 @@ class LogitDataset(Dataset):
         return len(self.dataframe)
 
     def __getitem__(self, item):
-        row = self.dataframe.iloc[idx]
+        row = self.dataframe.iloc[item]
 
         logit = [row[col] for col in self.dataframe.columns if "logit" in col]
 
         return {
-            "logit": logit,
-            "time_to_event": row["time_to_event"],
-            "cancer": row["cancer"],
+            "logit": torch.tensor(logit, dtype=torch.float32),
+            "time_to_event": torch.tensor(row["time_to_event"]),
+            "cancer": torch.tensor(row["cancer"]).long(),
             "machine_manufacturer": row["machine_manufacturer"],
             "identifier": row["identifier"]
         }

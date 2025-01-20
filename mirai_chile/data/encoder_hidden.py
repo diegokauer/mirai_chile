@@ -1,4 +1,5 @@
-import modin.pandas as pd
+import pandas as pd
+import torch
 from torch.utils.data import Dataset
 
 
@@ -20,14 +21,14 @@ class EncoderHiddenDataset(Dataset):
         return len(self.dataframe)
 
     def __getitem__(self, item):
-        row = self.dataframe.iloc[idx]
+        row = self.dataframe.iloc[item]
 
         encoder_hidden = [row[col] for col in self.dataframe.columns if "hidden" in col]
 
         return {
-            "encoder_hidden": encoder_hidden,
-            "time_to_event": row["time_to_event"],
-            "cancer": row["cancer"],
+            "encoder_hidden": torch.tensor(encoder_hidden, dtype=torch.float32),
+            "time_to_event": torch.tensor(row["time_to_event"]),
+            "cancer": torch.tensor(row["cancer"]).long(),
             "machine_manufacturer": row["machine_manufacturer"],
             "identifier": row["identifier"]
         }
