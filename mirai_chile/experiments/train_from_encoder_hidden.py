@@ -25,9 +25,9 @@ def main(args):
 
     torch.manual_seed(seed)
 
-    device = 'cpu'
+    device = torch.device("cpu")
     if torch.cuda.is_available():
-        device = 'cuda'
+        device = torch.device("cuda")
 
     args = TrainEncoderHiddenConfig()
     loss_function = PMFLoss(args)
