@@ -16,6 +16,7 @@ class PNGDataset(Dataset):
             dataframe (pd.DataFrame): DataFrame containing the file paths.
             transform (callable, optional): Optional transform to apply on an image.
         """
+        super().__init__()
         self.dataframe = self.generate_data_dataframe(directory)
         self.args = args
 
