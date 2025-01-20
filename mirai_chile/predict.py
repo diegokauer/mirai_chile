@@ -18,8 +18,10 @@ def predict_probas(model, dataset, device, dataloader, dry_run=False):
             if "batch" in data:
                 for key, val in data["batch"].items():
                     data["batch"][key] = val.to(device)
+            else:
+                data["batch"] = None
 
-            logit, _, _ = model(data[dataset])
+            logit, _, _ = model(data[dataset], data["batch"])
             pmf, s = model.head.logit_to_cancer_prob(logit)
 
             s_inv = 1 - s

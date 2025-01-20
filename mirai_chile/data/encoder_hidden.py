@@ -23,13 +23,20 @@ class EncoderHiddenDataset(Dataset):
     def __getitem__(self, item):
         row = self.dataframe.iloc[item]
 
-        encoder_hidden = [row[col] for col in self.dataframe.columns if "hidden" in col]
+        encoder_hidden = [row[col] for col in self.dataframe.columns if "encoder" in col]
+
+        batch = {
+            "time_seq": torch.tensor([0, 0, 0, 0]),
+            "view_seq": torch.tensor([0, 0, 1, 1]),
+            "side_seq": torch.tensor([1, 0, 1, 0])
+        }
 
         return {
             "encoder_hidden": torch.tensor(encoder_hidden, dtype=torch.float32),
             "time_to_event": torch.tensor(row["time_to_event"]),
             "cancer": torch.tensor(row["cancer"]).long(),
             "machine_manufacturer": row["machine_manufacturer"],
+            "batch": batch,
             "identifier": row["identifier"]
         }
 

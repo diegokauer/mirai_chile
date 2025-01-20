@@ -1,7 +1,6 @@
 import unittest
 
 import torch
-
 from mirai_chile.configs.mirai_base_config import MiraiBaseConfig, MiraiBaseConfigEval
 from mirai_chile.configs.mirai_chile_config import MiraiChileConfig
 from mirai_chile.data.generate_dataset import create_dataloader, PNGDataset
@@ -20,9 +19,9 @@ class TestMiraiForwardPass(unittest.TestCase):
     if torch.cuda.is_available():
         device = 'cuda'
 
-    mirai_chile_pmf = MiraiChile(pmf_args, PMFLayer(612))
-    mirai_base_cpl = MiraiChile(cpl_args, CumulativeProbabilityLayer(612))
-    mirai_eval = MiraiChile(eval_args, CumulativeProbabilityLayer(612))
+    mirai_chile_pmf = MiraiChile(pmf_args, PMFLayer(612)).eval()
+    mirai_base_cpl = MiraiChile(cpl_args, CumulativeProbabilityLayer(612)).eval()
+    mirai_eval = MiraiChile(eval_args, CumulativeProbabilityLayer(612)).eval()
 
     batch = {
         "side_seq": torch.tensor([0, 0, 0, 0]),
@@ -33,13 +32,13 @@ class TestMiraiForwardPass(unittest.TestCase):
     batched_input = torch.ones((7, 3, 4, 20, 16))
 
     single_unprocessed_exam = [
-        "../data/examples/png/000001_1_CC_L.png",
-        "../data/examples/png/000001_1_CC_R.png",
-        "../data/examples/png/000001_1_MLO_L.png",
-        "../data/examples/png/000001_1_MLO_R.png"
+        "C:/Users/Usuario/Documents/MirAi/MiraiChile/mirai_chile/data/examples/png/000001_1_CC_L.png",
+        "C:/Users/Usuario/Documents/MirAi/MiraiChile/mirai_chile/data/examples/png/000001_1_CC_R.png",
+        "C:/Users/Usuario/Documents/MirAi/MiraiChile/mirai_chile/data/examples/png/000001_1_MLO_L.png",
+        "C:/Users/Usuario/Documents/MirAi/MiraiChile/mirai_chile/data/examples/png/000001_1_MLO_R.png"
     ]
 
-    dataset = PNGDataset("../data/examples/png", pmf_args)
+    dataset = PNGDataset("C:/Users/Usuario/Documents/MirAi/MiraiChile/mirai_chile/data/examples/png", pmf_args)
     dataloader = create_dataloader(dataset)
     dataloader_input = next(iter(dataloader))
 

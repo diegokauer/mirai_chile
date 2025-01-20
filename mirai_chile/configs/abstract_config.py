@@ -1,4 +1,5 @@
 class AbstractConfig:
+    dropout_rate = 0.3
     max_followup = 5
     model_parallel = False
     device = None

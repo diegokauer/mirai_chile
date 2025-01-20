@@ -1,11 +1,10 @@
 import os
 
 import torch
-from torch import nn
-
 from mirai_chile.configs.abstract_config import AbstractConfig
 from mirai_chile.models.abstract_layer import AbstractLayer
 from mirai_chile.models.loss.abstract_loss import AbstractLoss
+from torch import nn
 
 
 class MiraiChile(nn.Module):
@@ -34,10 +33,12 @@ class MiraiChile(nn.Module):
             param.requires_grad = not args.freeze_transformer
         for param in self._transformer.pool.parameters():
             param.requires_grad = not args.freeze_risk_factor_layer
+        for param in self._encoder.pool.parameters():
+            param.requires_grad = not args.freeze_risk_factor_layer
 
     def forward(self, x, batch=None):
         if hasattr(self.args, "use_precomputed_encoder_hidden") and self.args.use_precomputed_encoder_hidden:
-            B = x.size(1)
+            B = x.size(0)
             encoder_hidden = x
             encoder_hidden = encoder_hidden.view(B, 4, -1)
         elif not self.args.precompute_mode:
@@ -48,13 +49,12 @@ class MiraiChile(nn.Module):
 
         if hasattr(self.args, "use_precomputed_transformer_hidden") and self.args.use_precomputed_transformer_hidden:
             B = x.size(1)
-            transformer_hidden = x
             encoder_hidden = torch.zeros((B, 4, 1))
-        elif not self.args.precompute_mode:
-            encoder_hidden = encoder_hidden.view(B, N, -1)
+            transformer_hidden = x[:, :512]
+        else:  # elif not self.args.precompute_mode:
+            encoder_hidden = encoder_hidden.view(B, 4, -1)
             transformer_hidden = self.transformer_forward(encoder_hidden, batch)
-
-        transformer_hidden = transformer_hidden[:, :512]
+            transformer_hidden = transformer_hidden[:, :512]
 
         if hasattr(self.args, "use_original_aggregate") and self.args.use_original_aggregate:
             logit, transformer_hidden = self._transformer.aggregate_and_classify(transformer_hidden)

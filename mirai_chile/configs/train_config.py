@@ -7,3 +7,11 @@ class TrainTransformerHiddenConfig(AbstractConfig):
     freeze_encoder = True
     freeze_transformer = True
     freeze_risk_factor_layer = True
+
+
+class TrainEncoderHiddenConfig(AbstractConfig):
+    use_precomputed_encoder_hidden = True
+    precompute_mode = True
+    freeze_encoder = True
+    freeze_transformer = False
+    freeze_risk_factor_layer = True

@@ -12,9 +12,11 @@ def train_model(model, dataset, device, dataloader, optimizer, epoch, dry_run=Fa
         if "batch" in data:
             for key, val in data["batch"].items():
                 data["batch"][key] = val.to(device)
+        else:
+            data["batch"] = None
 
         optimizer.zero_grad()
-        logit, _, _ = model(data[dataset])
+        logit, _, _ = model(data[dataset], data["batch"])
         pmf, s = model.head.logit_to_cancer_prob(logit)
         t = data["time_to_event"].to(device)
         d = data["cancer"].to(device)

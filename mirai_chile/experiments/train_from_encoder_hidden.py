@@ -2,11 +2,9 @@ import argparse
 
 import torch
 import torch.optim as optim
-from mirai_chile.configs.train_config import TrainTransformerHiddenConfig
-from mirai_chile.data.transformer_hidden import TransformerHiddenDataset
+from mirai_chile.configs.train_config import TrainEncoderHiddenConfig
+from mirai_chile.data.encoder_hidden import EncoderHiddenDataset
 from mirai_chile.model_evaluation.evaluation_functions.yearly_roc_auc import YearlyROCAUCFunction
-from mirai_chile.model_evaluation.evaluation_functions.yearly_roc_auc_manufacturer import \
-    YearlyROCAUCManufacturerFunction
 from mirai_chile.model_evaluation.evaluation_pipeline import EvaluationPipeline
 from mirai_chile.models.loss.pmf_loss import PMFLoss
 from mirai_chile.models.mirai_model import MiraiChile
@@ -31,14 +29,17 @@ def main(args):
     if torch.cuda.is_available():
         device = 'cuda'
 
-    args = TrainTransformerHiddenConfig()
+    args = TrainEncoderHiddenConfig()
     loss_function = PMFLoss(args)
     head = PMFLayer(612, args)
     model = MiraiChile(args=args, loss_function=loss_function, head=head)
     model.to_device(device)
 
     print("Loading Datasets...")
-    dataset = TransformerHiddenDataset()
+    dataset = EncoderHiddenDataset(
+        encoder_hidden_table_path="mirai_chile/data/dataset/combined_encoder_hidden.csv",
+        outcomes_table_path="mirai_chile/data/dataset/outcomes.csv"
+    )
     train_dataset = dataset.get_split("train")
     dev_dataset = dataset.get_split("dev")
     test_dataset = dataset.get_split("test")
@@ -65,13 +66,12 @@ def main(args):
 
     eval_pipe = EvaluationPipeline()
     eval_pipe.add_metric(YearlyROCAUCFunction(), {"max_followup": 5})
-    eval_pipe.add_metric(YearlyROCAUCManufacturerFunction(), {"max_followup": 5})
 
     print("Beginning training...")
     for epoch in range(epochs):
         print(f"Epoch: {epoch}")
-        train_model(model, "transformer_hidden", device, train_dataloader, optimizer, epoch, dry_run)
-        test_model(model, "transformer_hidden", device, dev_dataloader, eval_pipe, dry_run)
+        train_model(model, "encoder_hidden", device, train_dataloader, optimizer, epoch, dry_run)
+        test_model(model, "encoder_hidden", device, dev_dataloader, eval_pipe, dry_run)
         if save_each_epoch and save_model:
             torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_logit_pmf_epoch_{epoch}.pt")
         scheduler.step()
@@ -80,7 +80,7 @@ def main(args):
         torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_logit_pmf_final.pt")
 
     print("Predicting future cancer probabilities...")
-    predict_probas(model, "transformer_hidden", device, test_dataloader, dry_run)
+    predict_probas(model, "encoder_hidden", device, test_dataloader, dry_run)
 
 
 if __name__ == "__main__":
