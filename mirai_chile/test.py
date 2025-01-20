@@ -26,5 +26,5 @@ def test_model(model, dataset, device, dataloader, dry_run=False):
             if dry_run:
                 break
 
-    test_loss /= len(dataloader.dataset)
-    print('\nTest set: Average test loss: {:.4f}\n'.format(test_loss))
+    print('Test set: Total loss: {:.6f}\tAverage loss: {:.6f}\tAverage batch loss: {:.6f}\n'.format(
+        test_loss, test_loss / len(dataloader.dataset), test_loss / len(dataloader)))

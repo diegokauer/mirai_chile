@@ -1,9 +1,9 @@
 import torch
 
-from mirai_chile.models.loss.generic_loss import GenericLoss
+from mirai_chile.models.loss.abstract_loss import AbstractLoss
 
 
-class PMFLoss(GenericLoss):
+class PMFLoss(AbstractLoss):
     def __init__(self, args=None):
         super().__init__()
         if not (args is None):

@@ -2,10 +2,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from mirai_chile.models.generic_layer import GenericLayer
+from mirai_chile.models.abstract_layer import AbstractLayer
 
 
-class PMFLayer(GenericLayer):
+class PMFLayer(AbstractLayer):
     def __init__(self, num_features, args=None):
         super().__init__()
         if not (args is None):

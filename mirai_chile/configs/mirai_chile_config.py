@@ -1,5 +1,5 @@
-from mirai_chile.configs.generic_config import GenericConfig
+from mirai_chile.configs.abstract_config import AbstractConfig
 
 
-class MiraiChileConfig(GenericConfig):
+class MiraiChileConfig(AbstractConfig):
     pmf = True

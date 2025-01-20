@@ -1,9 +1,10 @@
-from mirai_chile.configs.generic_config import GenericConfig
 from torch import nn
 
+from mirai_chile.configs.abstract_config import AbstractConfig
 
-class GenericLoss(nn.Module):
-    def __init__(self, args=GenericConfig()):
+
+class AbstractLoss(nn.Module):
+    def __init__(self, args=AbstractConfig()):
         super().__init__()
         self.args = args
 

@@ -3,19 +3,19 @@ import os
 import torch
 from torch import nn
 
-from mirai_chile.configs.generic_config import GenericConfig
-from mirai_chile.models.generic_layer import GenericLayer
-from mirai_chile.models.loss.generic_loss import GenericLoss
+from mirai_chile.configs.abstract_config import AbstractConfig
+from mirai_chile.models.abstract_layer import AbstractLayer
+from mirai_chile.models.loss.abstract_loss import AbstractLoss
 
 
 class MiraiChile(nn.Module):
     def __init__(
             self,
-            args=GenericConfig(),
-            head=GenericLayer(),
+            args=AbstractConfig(),
+            head=AbstractLayer(),
             encoder=None,
             transformer=None,
-            loss_function=GenericLoss()
+            loss_function=AbstractLoss()
     ):
         super().__init__()
         self.args = args

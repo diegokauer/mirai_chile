@@ -1,6 +1,8 @@
 def train_model(model, dataset, device, dataloader, optimizer, epoch, dry_run=False):
     assert dataset in ["logit", "transformer_hidden", "encoder_hidden"]
 
+    train_loss = 0
+
     model.train()
 
     for batch_idx, data in enumerate(dataloader):
@@ -19,11 +21,17 @@ def train_model(model, dataset, device, dataloader, optimizer, epoch, dry_run=Fa
 
         loss = model.loss_function(logit, pmf, s, t, d)
         loss.backward()
+
+        train_loss += loss.item()
+
         optimizer.step()
 
         if batch_idx % 100 == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                epoch, batch_idx * len(data), len(dataloader.dataset),
+                epoch, batch_idx * data[dataset].size(0), len(dataloader.dataset),
                        100. * batch_idx / len(dataloader), loss.item()))
             if dry_run:
                 break
+
+    print('\nTrain set: Total loss: {:.6f}\tAverage loss: {:.6f}\tAverage batch loss: {:.6f}'.format(
+        train_loss, train_loss / len(dataloader.dataset), train_loss / len(dataloader)))

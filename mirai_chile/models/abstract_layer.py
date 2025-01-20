@@ -1,10 +1,10 @@
 import torch.nn as nn
 
-from mirai_chile.configs.generic_config import GenericConfig
+from mirai_chile.configs.abstract_config import AbstractConfig
 
 
-class GenericLayer(nn.Module):
-    def __init__(self, args=GenericConfig()):
+class AbstractLayer(nn.Module):
+    def __init__(self, args=AbstractConfig()):
         super().__init__()
         self.args = args
 

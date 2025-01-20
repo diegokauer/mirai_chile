@@ -10,6 +10,7 @@ from mirai_chile.data.transformer_hidden import TransformerHiddenDataset
 from mirai_chile.models.loss.pmf_loss import PMFLoss
 from mirai_chile.models.mirai_model import MiraiChile
 from mirai_chile.models.pmf_layer import PMFLayer
+from mirai_chile.predict import predict_probas
 from mirai_chile.test import test_model
 from mirai_chile.train import train_model
 
@@ -36,7 +37,9 @@ def main(args):
     print("Loading Datasets...")
     dataset = TransformerHiddenDataset()
     train_dataset = dataset.get_split("train")
-    test_dataset = dataset.get_split("dev")
+    dev_dataset = dataset.get_split("dev")
+    test_dataset = dataset.get_split("test")
+
     del dataset
 
     train_kwargs = {
@@ -51,6 +54,7 @@ def main(args):
         "batch_size": 32,
         "shuffle": True
     }
+    dev_dataloader = DataLoader(dev_dataset, **test_kwargs)
     test_dataloader = DataLoader(test_dataset, **test_kwargs)
 
     optimizer = optim.Adam(model.parameters())
@@ -60,7 +64,7 @@ def main(args):
     for epoch in range(epochs):
         print(f"Epoch: {epoch}")
         train_model(model, "transformer_hidden", device, train_dataloader, optimizer, epoch, dry_run)
-        test_model(model, "transformer_hidden", device, test_dataloader, dry_run)
+        test_model(model, "transformer_hidden", device, dev_dataloader, dry_run)
         if save_each_epoch and save_model:
             torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_logit_pmf_epoch_{epoch}.pt")
         scheduler.step()
@@ -68,14 +72,19 @@ def main(args):
     if save_model:
         torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_logit_pmf_final.pt")
 
+    print("Predicting future cancer probabilities...")
+    predict_probas(model, "transformer_hidden", device, test_dataloader, dry_run)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Train model")
     parser.add_argument('--epochs', type=int, help="number of epochs", default=10)
     parser.add_argument('--seed', type=int, help="Random seed", default=1999)
+    parser.add_argument('--batch_size', type=int, help="Batch size of dataloaders", default=32)
     parser.add_argument('--dry-run', type=bool, help="Dry run model", default=False)
     parser.add_argument('--save-model', type=bool, help="Save model", default=True)
     parser.add_argument('--save-each-epoch', type=bool, help="Save model on each epoch", default=True)
+    # parser.add_argument()
     args = parser.parse_args()
     main(args)

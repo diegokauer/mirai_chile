@@ -1,3 +1,3 @@
-import mirai_chile.configs.generic_config
+import mirai_chile.configs.abstract_config
 import mirai_chile.configs.mirai_base_config
 import mirai_chile.configs.mirai_chile_config

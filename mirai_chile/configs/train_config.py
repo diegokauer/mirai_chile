@@ -1,7 +1,7 @@
-from mirai_chile.configs.generic_config import GenericConfig
+from mirai_chile.configs.abstract_config import AbstractConfig
 
 
-class TrainTransformerHiddenConfig(GenericConfig):
+class TrainTransformerHiddenConfig(AbstractConfig):
     use_precomputed_transformer_hidden = True
     precompute_mode = True
     freeze_encoder = True

@@ -1,12 +1,12 @@
-from mirai_chile.configs.generic_config import GenericConfig
+from mirai_chile.configs.abstract_config import AbstractConfig
 
 
-class MiraiBaseConfig(GenericConfig):
+class MiraiBaseConfig(AbstractConfig):
     make_probs_indep = False
     use_original_aggregate = True
 
 
-class MiraiBaseConfigEval(GenericConfig):
+class MiraiBaseConfigEval(AbstractConfig):
     make_probs_indep = False
     use_original_aggregate = True
     freeze_encoder = True

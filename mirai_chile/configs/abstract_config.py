@@ -1,4 +1,4 @@
-class GenericConfig:
+class AbstractConfig:
     max_followup = 5
     model_parallel = False
     device = None

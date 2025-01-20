@@ -5,13 +5,14 @@ from socket import gethostname
 import pandas as pd
 import torch
 import torch.distributed as dist
-from mirai_chile.configs.generic_config import GenericConfig
+from torch.nn.parallel import DistributedDataParallel as DDP
+
+from mirai_chile.configs.abstract_config import AbstractConfig
 from mirai_chile.configs.mirai_base_config import MiraiBaseConfigEval
 from mirai_chile.data.generate_dataset import create_sampler, create_dataloader, PNGDataset
 from mirai_chile.experiments.utils.csv import combine_csv
 from mirai_chile.models.cumulative_probability_layer import CumulativeProbabilityLayer
 from mirai_chile.models.mirai_model import MiraiChile
-from torch.nn.parallel import DistributedDataParallel as DDP
 
 
 def infer(model, device, dataloader, rank):
@@ -84,10 +85,10 @@ def main(args):
         "rank": rank,
     }
 
-    dataset = PNGDataset(args.data_directory, GenericConfig())
-    sampler = create_sampler(dataset, GenericConfig(), **sampler_kwargs)
+    dataset = PNGDataset(args.data_directory, AbstractConfig())
+    sampler = create_sampler(dataset, AbstractConfig(), **sampler_kwargs)
     kwargs.update({"sampler": sampler})
-    dataloader = create_dataloader(dataset, GenericConfig(), **kwargs)
+    dataloader = create_dataloader(dataset, AbstractConfig(), **kwargs)
 
     model_args = MiraiBaseConfigEval()
     model_args.device = local_rank

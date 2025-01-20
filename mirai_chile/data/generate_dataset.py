@@ -1,16 +1,17 @@
 import os
 
 import pandas as pd
-from mirai_chile.configs.generic_config import GenericConfig
-from mirai_chile.data.pre_processing import pre_process_images
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.distributed import DistributedSampler
+
+from mirai_chile.configs.abstract_config import AbstractConfig
+from mirai_chile.data.pre_processing import pre_process_images
 
 
 # Assuming generate_data_dataframe is already defined
 # Add this custom dataset class
 class PNGDataset(Dataset):
-    def __init__(self, directory, args=GenericConfig()):
+    def __init__(self, directory, args=AbstractConfig()):
         """
         Args:
             dataframe (pd.DataFrame): DataFrame containing the file paths.
@@ -71,7 +72,7 @@ class PNGDataset(Dataset):
 
 
 # Function to create DataLoader
-def create_dataloader(dataset, args=GenericConfig(), **kwargs):
+def create_dataloader(dataset, args=AbstractConfig(), **kwargs):
     """
     Args:
         directory (str): Directory containing the .png files.
@@ -95,7 +96,7 @@ def create_dataloader(dataset, args=GenericConfig(), **kwargs):
     return dataloader
 
 
-def create_sampler(dataset, args=GenericConfig(), **kwargs):
+def create_sampler(dataset, args=AbstractConfig(), **kwargs):
     """
     Args:
         directory (str): Directory containing the .png files.
