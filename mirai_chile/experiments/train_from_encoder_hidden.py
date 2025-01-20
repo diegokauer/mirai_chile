@@ -33,9 +33,7 @@ def main(args):
     loss_function = PMFLoss(args)
     head = PMFLayer(612, args)
     model = MiraiChile(args=args, loss_function=loss_function, head=head)
-    model.eval()
-    model.args.device = device
-    model.to(device)
+    model.to_device(device)
 
     print("Loading Datasets...")
     dataset = EncoderHiddenDataset(
