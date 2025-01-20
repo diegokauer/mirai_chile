@@ -4,9 +4,9 @@ import os
 import pandas as pd
 import torch
 from line_profiler import profile
-from mirai_chile.configs.abstract_config import AbstractConfig
 from mirai_chile.configs.mirai_base_config import MiraiBaseConfigEval
-from mirai_chile.data.generate_dataset import create_dataloader
+from mirai_chile.data.generate_dataset import DataLoader
+from mirai_chile.data.generate_dataset import PNGDataset
 from mirai_chile.models.cumulative_probability_layer import CumulativeProbabilityLayer
 from mirai_chile.models.mirai_model import MiraiChile
 
@@ -32,7 +32,8 @@ def main(args):
         'shuffle': True
     }
 
-    dataloader = create_dataloader(args.data_directory, AbstractConfig(), **inference_kwargs)
+    dataset = DataLoader(PNGDataset(args.data_directory))
+    dataloader = create_dataloader(dataset, **inference_kwargs)
 
     logits_table = []
     transformer_table = []
