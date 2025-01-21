@@ -102,8 +102,8 @@ def main(args):
     print("Beginning training...")
     for epoch in range(epochs):
         print(f"Epoch: {epoch}")
-        train_model(model, "encoder_hidden", ddp_model, train_dataloader, optimizer, epoch, dry_run)
-        test_model(model, "encoder_hidden", ddp_model, dev_dataloader, eval_pipe, dry_run)
+        train_model(ddp_model, "encoder_hidden", local_rank, train_dataloader, optimizer, epoch, dry_run)
+        test_model(ddp_model, "encoder_hidden", local_rank, dev_dataloader, eval_pipe, dry_run)
         if save_each_epoch and save_model:
             torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_encoder_pmf_epoch_{epoch}_{rank}_mp.pt")
         scheduler.step()

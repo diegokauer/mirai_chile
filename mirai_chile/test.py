@@ -1,5 +1,6 @@
 import pandas as pd
 import torch
+from torch.nn.parallel import DistributedDataParallel as DDP
 
 
 def test_model(model, dataset, device, dataloader, eval_pipeline=None, dry_run=False, epoch=None):
@@ -21,7 +22,10 @@ def test_model(model, dataset, device, dataloader, eval_pipeline=None, dry_run=F
                 data["batch"] = None
 
             logit, _, _ = model(data[dataset], data["batch"])
-            pmf, s = model.head.logit_to_cancer_prob(logit)
+            if isinstance(model, DDP):
+                pmf, s = model.module.head.logit_to_cancer_prob(logit)
+            else:
+                pmf, s = model.head.logit_to_cancer_prob(logit)
             t = data["time_to_event"].to(device)
             d = data["cancer"].to(device)
 

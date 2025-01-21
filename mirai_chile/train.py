@@ -1,4 +1,6 @@
+from torch.nn.parallel import DistributedDataParallel as DDP
 from tqdm import tqdm
+
 
 def train_model(model, dataset, device, dataloader, optimizer, epoch, dry_run=False):
     assert dataset in ["logit", "transformer_hidden", "encoder_hidden"]
@@ -21,7 +23,10 @@ def train_model(model, dataset, device, dataloader, optimizer, epoch, dry_run=Fa
             optimizer.zero_grad()
             logit, _, _ = model(data[dataset], data["batch"])
             # print(logit)
-            pmf, s = model.head.logit_to_cancer_prob(logit)
+            if isinstance(model, DDP):
+                pmf, s = model.module.head.logit_to_cancer_prob(logit)
+            else:
+                pmf, s = model.head.logit_to_cancer_prob(logit)
             t = data["time_to_event"].to(device)
             d = data["cancer"].to(device)
 
