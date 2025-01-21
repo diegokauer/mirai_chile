@@ -11,9 +11,10 @@ class PMFLayer(AbstractLayer):
         if not (args is None):
             self.args = args
         self.pmf = nn.Linear(num_features, self.args.max_followup)
-        # self.dropout = nn.Dropout(self.args.dropout_rate)
+        self.dropout = nn.Dropout(self.args.dropout_rate)
 
     def forward(self, x):
+        x = self.dropout(x)
         pmf = self.pmf(x)
         # pmf = self.dropout(hidden)
         return pmf

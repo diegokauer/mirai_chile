@@ -1,10 +1,8 @@
 import argparse
+from collections import Counter
 
 import torch
 import torch.optim as optim
-from torch.optim.lr_scheduler import ExponentialLR
-from torch.utils.data import DataLoader
-
 from mirai_chile.configs.train_config import TrainEncoderHiddenConfig
 from mirai_chile.data.encoder_hidden import EncoderHiddenDataset
 from mirai_chile.model_evaluation.evaluation_functions.yearly_roc_auc import YearlyROCAUCFunction
@@ -17,6 +15,7 @@ from mirai_chile.models.pmf_layer import PMFLayer
 from mirai_chile.predict import predict_probas
 from mirai_chile.test import test_model
 from mirai_chile.train import train_model
+from torch.utils.data import DataLoader, WeightedRandomSampler
 
 
 def main(args):
@@ -49,10 +48,30 @@ def main(args):
 
     del dataset
 
+    # Count the number of samples per class
+    labels = train_dataset.dataframe.cancer
+    class_counts = Counter(labels)
+    print("Class Counts:", class_counts)
+
+    # Compute class weights (inverse frequency)
+    num_samples = len(labels)
+    class_weights = {cls: num_samples / count for cls, count in class_counts.items()}
+
+    # Convert class weights to sample weights
+    sample_weights = np.array([class_weights[label] for label in labels])
+
+    # Convert sample weights to a PyTorch tensor
+    sample_weights_tensor = torch.DoubleTensor(sample_weights)
+
+    sampler = WeightedRandomSampler(weights=sample_weights_tensor,
+                                    num_samples=len(sample_weights),
+                                    replacement=True)
+
     train_kwargs = {
         # 'num_workers': int(os.environ["SLURM_CPUS_PER_TASK"]),
-        "batch_size": 32,
-        "shuffle": True
+        "batch_size": 256,
+        # "shuffle": True
+        "sampler": sampler
     }
     train_dataloader = DataLoader(train_dataset, **train_kwargs)
 
@@ -65,7 +84,7 @@ def main(args):
     test_dataloader = DataLoader(test_dataset, **test_kwargs)
 
     optimizer = optim.Adam(model.parameters(), lr=2e-3)
-    scheduler = ExponentialLR(optimizer, 0.95)
+    # scheduler = ExponentialLR(optimizer, 0.95)
 
     eval_pipe = EvaluationPipeline()
     eval_pipe.add_metric(YearlyROCAUCFunction(), {"max_followup": 5})
@@ -75,10 +94,10 @@ def main(args):
     for epoch in range(epochs):
         print(f"Epoch: {epoch}")
         train_model(model, "encoder_hidden", device, train_dataloader, optimizer, epoch, dry_run)
-        test_model(model, "encoder_hidden", device, dev_dataloader, eval_pipe, dry_run)
+        test_model(model, "encoder_hidden", device, dev_dataloader, eval_pipe, dry_run, epoch=epoch)
         if save_each_epoch and save_model:
             torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_encoder_pmf_epoch_{epoch}.pt")
-        scheduler.step()
+        # scheduler.step()
 
     if save_model:
         torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_encoder_pmf_final.pt")

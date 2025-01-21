@@ -47,4 +47,6 @@ for j, m in enumerate(prob_df.machine_manufacturer.unique()):
     eval_pipe.eval_dataset(subdf)
     table.append({"machine_manufacturer": m, **{f"roc_auc_year{i + 1}": eval_pipe.results[j][i] for i in range(5)}})
 
-print(pd.DataFrame(table))
+df = pd.DataFrame(table)
+print(df)
+print(prob_df[(prob_df.machine_manufacturer == "Metaltronica") & (prob_df.cancer == 1)][["cancer", "time_to_event"]])

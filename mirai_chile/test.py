@@ -2,7 +2,7 @@ import pandas as pd
 import torch
 
 
-def test_model(model, dataset, device, dataloader, eval_pipeline=None, dry_run=False):
+def test_model(model, dataset, device, dataloader, eval_pipeline=None, dry_run=False, epoch=None):
     assert dataset in ["logit", "transformer_hidden", "encoder_hidden"]
 
     test_loss = 0
@@ -46,9 +46,37 @@ def test_model(model, dataset, device, dataloader, eval_pipeline=None, dry_run=F
     print('Test set: Total loss: {:.6f}\tAverage loss: {:.6f}\tAverage batch loss: {:.6f}\n'.format(
         test_loss, test_loss / len(dataloader.dataset), test_loss / len(dataloader)))
 
-    df = pd.DataFrame(probs_table)
-    print(df.head())
+    data = pd.DataFrame(probs_table)
+    print(data.head())
 
     if not eval_pipeline is None:
-        eval_pipeline.eval_dataset(df)
+        eval_pipeline.eval_dataset(data)
         print(eval_pipeline)
+
+    # for manufacturer in data.machine_manufacturer.unique():
+    #     _, ax = plt.subplots()
+    #
+    #     df = data[data.machine_manufacturer == manufacturer].reset_index(drop=True)
+    #
+    #     for followup in range(5):
+    #
+    #         df.loc[:, 'included'] = False
+    #         df.loc[(df.cancer == 1) & (df.time_to_event <= followup), 'included'] = True
+    #         df.loc[df.time_to_event >= followup, 'included'] = True
+    #
+    #         sub_df = df[df.included]
+    #         g = ((sub_df.cancer == 1) & (sub_df.time_to_event <= followup))
+    #
+    #         probs = sub_df[['year_1', 'year_2', 'year_3', 'year_4', 'year_5']].to_numpy()
+    #         if followup == 0:
+    #             N = len(sub_df)
+    #
+    #         if followup == 4:
+    #             RocCurveDisplay.from_predictions(g, probs[:, followup], ax=ax, name=f'year{followup + 1}',
+    #                                              plot_chance_level=True)
+    #         else:
+    #             RocCurveDisplay.from_predictions(g, probs[:, followup], ax=ax, name=f'year{followup + 1}')
+    #
+    #     ax.set_title('Manufacturer: ' + manufacturer + f" (n={N} examinations)")
+    #     plt.grid()
+    #     plt.show()
