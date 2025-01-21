@@ -31,20 +31,6 @@ class PMFLoss(AbstractLoss):
         # d: Indicators for event occurrence, shape (B,)
         # """
         device = self.args.device
-        B, N = logit.size()
-
-        # Append a zero column to logits
-        logit = torch.cat((logit, torch.zeros(B, 1, device=device)), dim=1)
-        N += 1
-
-        # Create lower triangular matrix without diagonal
-        l_t_mat = torch.tril(torch.ones(N, N, device=device), diagonal=-1)
-
-        # Compute PMF (Probability Mass Function)
-        pmf = F.softmax(logit, dim=1)  # Exclude the last column
-
-        # Compute survival probabilities
-        s = torch.matmul(pmf, l_t_mat)
 
         # d[(t >= self.args.max_followup) & (d == 1)] = 0
         t = torch.clamp(t, max=self.args.max_followup)  # Make t in range[0, 4]
