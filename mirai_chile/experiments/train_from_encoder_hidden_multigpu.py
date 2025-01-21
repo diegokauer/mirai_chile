@@ -90,7 +90,7 @@ def main(args):
     head = PMFLayer(612, args)
     model = MiraiChile(args=args, loss_function=loss_function, head=head)
     model.to_device(local_rank)
-    ddp_model = DDP(model, device_ids=[local_rank])
+    ddp_model = DDP(model, device_ids=[local_rank], find_unused_parameters=True)
 
     optimizer = optim.Adam(ddp_model.parameters(), lr=2e-3)
     scheduler = ExponentialLR(optimizer, 0.95)
