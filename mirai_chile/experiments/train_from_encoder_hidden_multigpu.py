@@ -1,9 +1,13 @@
 import argparse
+import os
+from socket import gethostname
 
 import torch
+import torch.distributed as dist
 import torch.optim as optim
+from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim.lr_scheduler import ExponentialLR
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, DistributedSampler
 
 from mirai_chile.configs.train_config import TrainEncoderHiddenConfig
 from mirai_chile.data.encoder_hidden import EncoderHiddenDataset
@@ -19,6 +23,11 @@ from mirai_chile.test import test_model
 from mirai_chile.train import train_model
 
 
+def setup(rank, world_size):
+    # initialize the process group
+    dist.init_process_group("nccl", rank=rank, world_size=world_size)
+
+
 def main(args):
     epochs = args.epochs
     seed = args.seed
@@ -26,17 +35,29 @@ def main(args):
     save_model = args.save_model
     save_each_epoch = args.save_each_epoch
 
-    # torch.manual_seed(seed)
+    rank = int(os.environ["SLURM_PROCID"])
+    world_size = int(os.environ["WORLD_SIZE"])
+    gpus_per_node = int(os.environ["SLURM_GPUS_ON_NODE"])
+    # assert gpus_per_node == torch.cuda.device_count()
+    print(f"Hello from rank {rank} of {world_size} on {gethostname()} where there are" \
+          f" {gpus_per_node} allocated GPUs per node.", flush=True)
 
-    device = torch.device("cpu")
-    if torch.cuda.is_available():
-        device = torch.device("cuda")
+    setup(rank, world_size)
+    if rank == 0: print(f"Group initialized? {dist.is_initialized()}", flush=True)
 
-    args = TrainEncoderHiddenConfig()
-    loss_function = PMFLoss(args)
-    head = PMFLayer(612, args)
-    model = MiraiChile(args=args, loss_function=loss_function, head=head)
-    model.to_device(device)
+    local_rank = rank - gpus_per_node * (rank // gpus_per_node)
+    torch.cuda.set_device(local_rank)
+    print(f"host: {gethostname()}, rank: {rank}, local_rank: {local_rank}")
+
+    kwargs = {
+        'batch_size': 1,
+        'num_workers': int(os.environ["SLURM_CPUS_PER_TASK"]),
+        'pin_memory': True,
+    }
+    sampler_kwargs = {
+        "num_replicas": world_size,
+        "rank": rank,
+    }
 
     print("Loading Datasets...")
     dataset = EncoderHiddenDataset(
@@ -47,24 +68,33 @@ def main(args):
     dev_dataset = dataset.get_split("dev")
     test_dataset = dataset.get_split("test")
 
-    del dataset
-
+    train_sampler = DistributedSampler(train_dataset, num_replicas=world_size, rank=rank)
     train_kwargs = {
-        # 'num_workers': int(os.environ["SLURM_CPUS_PER_TASK"]),
+        'num_workers': int(os.environ["SLURM_CPUS_PER_TASK"]),
         "batch_size": 32,
-        "shuffle": True
+        "shuffle": True,
+        "pin_memory": True,
+        "sampler": train_sampler
     }
     train_dataloader = DataLoader(train_dataset, **train_kwargs)
 
     test_kwargs = {
-        # 'num_workers': int(os.environ["SLURM_CPUS_PER_TASK"]),
+        'num_workers': int(os.environ["SLURM_CPUS_PER_TASK"]),
         "batch_size": 32,
-        "shuffle": True
+        "shuffle": True,
+        "pin_memory": True
     }
     dev_dataloader = DataLoader(dev_dataset, **test_kwargs)
     test_dataloader = DataLoader(test_dataset, **test_kwargs)
 
-    optimizer = optim.Adam(model.parameters(), lr=1e-4)
+    args = TrainEncoderHiddenConfig()
+    loss_function = PMFLoss(args)
+    head = PMFLayer(612, args)
+    model = MiraiChile(args=args, loss_function=loss_function, head=head)
+    model.to_device(local_rank)
+    ddp_model = DDP(model, device_ids=[local_rank])
+
+    optimizer = optim.Adam(ddp_model.parameters())
     scheduler = ExponentialLR(optimizer, 0.95)
 
     eval_pipe = EvaluationPipeline()
@@ -74,20 +104,22 @@ def main(args):
     print("Beginning training...")
     for epoch in range(epochs):
         print(f"Epoch: {epoch}")
-        train_model(model, "encoder_hidden", device, train_dataloader, optimizer, epoch, dry_run)
-        test_model(model, "encoder_hidden", device, dev_dataloader, eval_pipe, dry_run)
+        train_model(model, "encoder_hidden", ddp_model, train_dataloader, optimizer, epoch, dry_run)
+        test_model(model, "encoder_hidden", ddp_model, dev_dataloader, eval_pipe, dry_run)
         if save_each_epoch and save_model:
-            torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_encoder_pmf_epoch_{epoch}.pt")
+            torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_encoder_pmf_epoch_{epoch}_{rank}_mp.pt")
         scheduler.step()
 
     if save_model:
-        torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_encoder_pmf_final.pt")
+        torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_encoder_pmf_final_{rank}_mp.pt")
 
     print("Predicting future cancer probabilities...")
-    prob_df = predict_probas(model, "encoder_hidden", device, test_dataloader, dry_run=dry_run)
+    prob_df = predict_probas(model, "encoder_hidden", local_rank, test_dataloader, dry_run=dry_run)
     eval_pipe.flush()
     eval_pipe.eval_dataset(prob_df)
     print(eval_pipe)
+
+    dist.destroy_process_group()
 
 
 if __name__ == "__main__":

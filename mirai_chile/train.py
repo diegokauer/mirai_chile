@@ -17,6 +17,7 @@ def train_model(model, dataset, device, dataloader, optimizer, epoch, dry_run=Fa
 
         optimizer.zero_grad()
         logit, _, _ = model(data[dataset], data["batch"])
+        # print(logit)
         pmf, s = model.head.logit_to_cancer_prob(logit)
         t = data["time_to_event"].to(device)
         d = data["cancer"].to(device)

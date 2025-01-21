@@ -11,15 +11,11 @@ class PMFLayer(AbstractLayer):
         if not (args is None):
             self.args = args
         self.pmf = nn.Linear(num_features, self.args.max_followup)
-        self.bn = nn.BatchNorm1d(self.args.max_followup)
-        self.relu = nn.ReLU(inplace=True)
-        self.dropout = nn.Dropout(self.args.dropout_rate)
+        # self.dropout = nn.Dropout(self.args.dropout_rate)
 
     def forward(self, x):
-        hidden = self.pmf(x)
-        pmf = self.bn(hidden)
-        pmf = self.relu(pmf)
-        pmf = self.dropout(pmf)
+        pmf = self.pmf(x)
+        # pmf = self.dropout(hidden)
         return pmf
 
     def logit_to_cancer_prob(self, logit):

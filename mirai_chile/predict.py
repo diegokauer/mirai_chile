@@ -4,7 +4,7 @@ import pandas as pd
 import torch
 
 
-def predict_probas(model, dataset, device, dataloader, dry_run=False):
+def predict_probas(model, dataset, device, dataloader, rank=None, dry_run=False):
     assert dataset in ["logit", "transformer_hidden", "encoder_hidden"]
 
     model.eval()
@@ -28,7 +28,11 @@ def predict_probas(model, dataset, device, dataloader, dry_run=False):
 
             identifier = data["identifier"]
             for i, id in enumerate(identifier):
-                outcomes_dict = {"time_to_event": data["time_to_event"][i].item(), "cancer": data["cancer"][i].item()}
+                outcomes_dict = {
+                    "time_to_event": data["time_to_event"][i].item(),
+                    "cancer": data["cancer"][i].item(),
+                    "machine_manufacturer": data["machine_manufacturer"][i]
+                }
                 year_prob_dict = {f"year_{j + 1}": s_inv[i, j].item() for j in range(s_inv.size(1))}
                 outcomes_dict.update(year_prob_dict)
                 probs_table.append(
@@ -37,5 +41,10 @@ def predict_probas(model, dataset, device, dataloader, dry_run=False):
             if dry_run:
                 break
 
-    pd.DataFrame(probs_table).to_csv(os.path.join("./mirai_chile/data/output/", f"predicted_probas_{dataset}.csv"),
-                                     index=False)
+    filename = f"predicted_probas_{dataset}.csv"
+    if not rank is None:
+        filename = f"predicted_probas_{dataset}_rank_{rank}.csv"
+
+    df = pd.DataFrame(probs_table)
+    df.to_csv(os.path.join("./mirai_chile/data/output/", filename), index=False)
+    return df

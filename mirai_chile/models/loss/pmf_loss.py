@@ -47,8 +47,11 @@ class PMFLoss(AbstractLoss):
         # Compute survival probabilities
         s = torch.matmul(pmf, l_t_mat)
 
-        # d[(t >= self.args.max_followup) & (d == 1)] = 0
-        t = torch.clamp(t, max=self.args.max_followup)  # Make t in range[0, 4]
+        s = s[:, :-1]
+        pmf = pmf[:, :-1]
+
+        d[(t >= self.args.max_followup) & (d == 1)] = 0
+        t = torch.clamp(t, max=self.args.max_followup - 1)  # Make t in range[0, 4]
 
         # Ensure t is used correctly
         batch_indices = torch.arange(logit.size(0), device=logit.device)

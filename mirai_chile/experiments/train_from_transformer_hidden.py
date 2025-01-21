@@ -1,8 +1,10 @@
 import argparse
-import os
 
 import torch
 import torch.optim as optim
+from torch.optim.lr_scheduler import ExponentialLR
+from torch.utils.data import DataLoader
+
 from mirai_chile.configs.train_config import TrainTransformerHiddenConfig
 from mirai_chile.data.transformer_hidden import TransformerHiddenDataset
 from mirai_chile.model_evaluation.evaluation_functions.yearly_roc_auc import YearlyROCAUCFunction
@@ -15,8 +17,6 @@ from mirai_chile.models.pmf_layer import PMFLayer
 from mirai_chile.predict import predict_probas
 from mirai_chile.test import test_model
 from mirai_chile.train import train_model
-from torch.optim.lr_scheduler import ExponentialLR
-from torch.utils.data import DataLoader
 
 
 def main(args):
@@ -44,24 +44,22 @@ def main(args):
     dev_dataset = dataset.get_split("dev")
     test_dataset = dataset.get_split("test")
 
-    del dataset
-
     train_kwargs = {
-        "num_workers": int(os.environ["SLURM_CPUS_PER_TASK"]),
+        # "num_workers": int(os.environ["SLURM_CPUS_PER_TASK"]),
         "batch_size": 32,
         "shuffle": True
     }
     train_dataloader = DataLoader(train_dataset, **train_kwargs)
 
     test_kwargs = {
-        "num_workers": int(os.environ["SLURM_CPUS_PER_TASK"]),
+        # "num_workers": int(os.environ["SLURM_CPUS_PER_TASK"]),
         "batch_size": 32,
         "shuffle": True
     }
     dev_dataloader = DataLoader(dev_dataset, **test_kwargs)
     test_dataloader = DataLoader(test_dataset, **test_kwargs)
 
-    optimizer = optim.Adam(model.parameters())
+    optimizer = optim.Adam(model.parameters(), 2e-3)
     scheduler = ExponentialLR(optimizer, 0.95)
 
     eval_pipe = EvaluationPipeline()
@@ -81,8 +79,11 @@ def main(args):
         torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_transformer_pmf_final.pt")
 
     print("Predicting future cancer probabilities...")
-    predict_probas(model, "transformer_hidden", device, test_dataloader, dry_run)
-
+    prob_df = predict_probas(model, "transformer_hidden", device, DataLoader(dataset, **test_kwargs), dry_run=dry_run)
+    eval_pipe.flush()
+    eval_pipe.eval_dataset(prob_df)
+    print(eval_pipe)
+    print("Done!")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

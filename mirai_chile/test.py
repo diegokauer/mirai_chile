@@ -47,6 +47,7 @@ def test_model(model, dataset, device, dataloader, eval_pipeline=None, dry_run=F
         test_loss, test_loss / len(dataloader.dataset), test_loss / len(dataloader)))
 
     df = pd.DataFrame(probs_table)
+    print(df.head())
 
     if not eval_pipeline is None:
         eval_pipeline.eval_dataset(df)

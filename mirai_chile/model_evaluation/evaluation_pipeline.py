@@ -18,3 +18,6 @@ class EvaluationPipeline:
             self.eval_dataset()
 
         return '\n'.join([str(metric) for metric in self.metrics])
+
+    def flush(self):
+        self.results = []
