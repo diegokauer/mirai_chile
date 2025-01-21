@@ -30,7 +30,10 @@ def train_model(model, dataset, device, dataloader, optimizer, epoch, dry_run=Fa
             t = data["time_to_event"].to(device)
             d = data["cancer"].to(device)
 
-            loss = model.loss_function(logit, pmf, s, t, d)
+            if isinstance(model, DDP):
+                loss = model.module.loss_function(logit, pmf, s, t, d)
+            else:
+                loss = model.loss_function(logit, pmf, s, t, d)
             loss.backward()
             optimizer.step()
 

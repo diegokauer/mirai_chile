@@ -29,7 +29,11 @@ def test_model(model, dataset, device, dataloader, eval_pipeline=None, dry_run=F
             t = data["time_to_event"].to(device)
             d = data["cancer"].to(device)
 
-            test_loss += model.loss_function(logit, pmf, s, t, d).item()
+            if isinstance(model, DDP):
+                loss = model.module.loss_function(logit, pmf, s, t, d)
+            else:
+                loss = model.loss_function(logit, pmf, s, t, d)
+            test_loss += loss.item()
 
             s_inv = 1 - s
             identifier = data["identifier"]
