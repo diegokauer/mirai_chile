@@ -5,6 +5,7 @@
 /mirai_chile/data/dataset/*
 **/*.lprof
 **/scratch.py
+/mirai_chile/checkpoints/*.pt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
