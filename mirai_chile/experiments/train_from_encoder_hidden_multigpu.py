@@ -5,10 +5,6 @@ from socket import gethostname
 import torch
 import torch.distributed as dist
 import torch.optim as optim
-from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.optim.lr_scheduler import ExponentialLR
-from torch.utils.data import DataLoader, DistributedSampler
-
 from mirai_chile.configs.train_config import TrainEncoderHiddenConfig
 from mirai_chile.data.encoder_hidden import EncoderHiddenDataset
 from mirai_chile.model_evaluation.evaluation_functions.yearly_roc_auc import YearlyROCAUCFunction
@@ -21,6 +17,9 @@ from mirai_chile.models.pmf_layer import PMFLayer
 from mirai_chile.predict import predict_probas
 from mirai_chile.test import test_model
 from mirai_chile.train import train_model
+from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.optim.lr_scheduler import ExponentialLR
+from torch.utils.data import DataLoader, DistributedSampler
 
 
 def setup(rank, world_size):
@@ -72,7 +71,6 @@ def main(args):
     train_kwargs = {
         'num_workers': int(os.environ["SLURM_CPUS_PER_TASK"]),
         "batch_size": 32,
-        "shuffle": True,
         "pin_memory": True,
         "sampler": train_sampler
     }
