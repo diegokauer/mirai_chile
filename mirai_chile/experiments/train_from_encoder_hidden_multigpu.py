@@ -94,7 +94,7 @@ def main(args):
     model.to_device(local_rank)
     ddp_model = DDP(model, device_ids=[local_rank])
 
-    optimizer = optim.Adam(ddp_model.parameters())
+    optimizer = optim.Adam(ddp_model.parameters(), lr=2e-3)
     scheduler = ExponentialLR(optimizer, 0.95)
 
     eval_pipe = EvaluationPipeline()

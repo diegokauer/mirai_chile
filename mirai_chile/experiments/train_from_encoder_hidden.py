@@ -64,7 +64,7 @@ def main(args):
     dev_dataloader = DataLoader(dev_dataset, **test_kwargs)
     test_dataloader = DataLoader(test_dataset, **test_kwargs)
 
-    optimizer = optim.Adam(model.parameters(), lr=1e-4)
+    optimizer = optim.Adam(model.parameters(), lr=2e-3)
     scheduler = ExponentialLR(optimizer, 0.95)
 
     eval_pipe = EvaluationPipeline()
