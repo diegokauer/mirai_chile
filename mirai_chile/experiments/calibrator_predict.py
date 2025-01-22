@@ -50,3 +50,5 @@ for j, m in enumerate(prob_df.machine_manufacturer.unique()):
 df = pd.DataFrame(table)
 print(df)
 print(prob_df[(prob_df.machine_manufacturer == "Metaltronica") & (prob_df.cancer == 1)][["cancer", "time_to_event"]])
+
+prob_df.to_csv("../data/output/original_probs.csv", index=False)

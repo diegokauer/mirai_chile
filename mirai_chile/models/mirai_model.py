@@ -1,11 +1,10 @@
 import os
 
 import torch
-from torch import nn
-
 from mirai_chile.configs.abstract_config import AbstractConfig
 from mirai_chile.models.abstract_layer import AbstractLayer
 from mirai_chile.models.loss.abstract_loss import AbstractLoss
+from torch import nn
 
 
 class MiraiChile(nn.Module):
@@ -32,8 +31,8 @@ class MiraiChile(nn.Module):
             param.requires_grad = not args.freeze_encoder
         for param in self._transformer.parameters():
             param.requires_grad = not args.freeze_transformer
-        for param in self._transformer.pool.parameters():
-            param.requires_grad = not args.freeze_risk_factor_layer
+        # for param in self._transformer.pool.parameters():
+        #     param.requires_grad = not args.freeze_risk_factor_layer
         for param in self._encoder.pool.parameters():
             param.requires_grad = not args.freeze_risk_factor_layer
 

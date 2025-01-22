@@ -18,7 +18,6 @@ from mirai_chile.predict import predict_probas
 from mirai_chile.test import test_model
 from mirai_chile.train import train_model
 from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.optim.lr_scheduler import ExponentialLR
 from torch.utils.data import DataLoader, DistributedSampler
 
 
@@ -67,7 +66,7 @@ def main(args):
     dev_dataset = dataset.get_split("dev")
     test_dataset = dataset.get_split("test")
 
-    train_sampler = DistributedSampler(train_dataset, num_replicas=world_size, rank=rank)
+    train_sampler = DistributedSampler(train_dataset, num_replicas=world_size, rank=rank, shuffle=True)
     train_kwargs = {
         'num_workers': int(os.environ["SLURM_CPUS_PER_TASK"]),
         "batch_size": 32,
@@ -92,8 +91,7 @@ def main(args):
     model.to_device(local_rank)
     ddp_model = DDP(model, device_ids=[local_rank], find_unused_parameters=True)
 
-    optimizer = optim.Adam(ddp_model.parameters(), lr=2e-3)
-    scheduler = ExponentialLR(optimizer, 0.95)
+    optimizer = optim.Adam(ddp_model.parameters())
 
     eval_pipe = EvaluationPipeline()
     eval_pipe.add_metric(YearlyROCAUCFunction(), {"max_followup": 5})
@@ -106,7 +104,6 @@ def main(args):
         test_model(ddp_model, "encoder_hidden", local_rank, dev_dataloader, eval_pipe, dry_run)
         if save_each_epoch and save_model:
             torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_encoder_pmf_epoch_{epoch}_{rank}_mp.pt")
-        scheduler.step()
 
     if save_model:
         torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_encoder_pmf_final_{rank}_mp.pt")
