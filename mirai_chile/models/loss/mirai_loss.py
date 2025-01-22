@@ -4,9 +4,10 @@ from torch import nn
 
 class MiraiLoss(nn.Module):
     def __init__(self, args):
-        super(MiraiLoss).__init__()
+        super().__init__()
         self.args = args
         self.loss = nn.functional.binary_cross_entropy_with_logits
+        self.relu = nn.ReLU()
 
     def forward(self, logits, pmf, s, t, d):
         """
