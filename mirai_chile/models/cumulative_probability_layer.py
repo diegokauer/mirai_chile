@@ -1,7 +1,7 @@
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from mirai_chile.configs.abstract_config import AbstractConfig
 from mirai_chile.models.abstract_layer import AbstractLayer
 
