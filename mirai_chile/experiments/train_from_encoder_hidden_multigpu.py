@@ -101,7 +101,7 @@ def main(args):
     for epoch in range(epochs):
         print(f"Epoch: {epoch}")
         train_model(ddp_model, "encoder_hidden", local_rank, train_dataloader, optimizer, epoch, dry_run)
-        test_model(ddp_model, "encoder_hidden", local_rank, dev_dataloader, eval_pipe, dry_run)
+        test_model(ddp_model, "encoder_hidden", local_rank, DataLoader(dataset, **test_kwargs), eval_pipe, dry_run)
         if save_each_epoch and save_model:
             torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_encoder_pmf_epoch_{epoch}_{rank}_mp.pt")
 
@@ -109,7 +109,7 @@ def main(args):
         torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_encoder_pmf_final_{rank}_mp.pt")
 
     print("Predicting future cancer probabilities...")
-    prob_df = predict_probas(model, "encoder_hidden", local_rank, test_dataloader, dry_run=dry_run)
+    prob_df = predict_probas(model, "encoder_hidden", local_rank, DataLoader(dataset, **test_kwargs), dry_run=dry_run)
     eval_pipe.flush()
     eval_pipe.eval_dataset(prob_df)
     print(eval_pipe)
