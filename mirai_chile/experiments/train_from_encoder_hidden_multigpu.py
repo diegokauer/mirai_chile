@@ -91,7 +91,7 @@ def main(args):
     model.to_device(local_rank)
     ddp_model = DDP(model, device_ids=[local_rank], find_unused_parameters=True)
 
-    optimizer = optim.Adam(ddp_model.parameters())
+    optimizer = optim.Adam(ddp_model.parameters(), lr=1e-5)
 
     eval_pipe = EvaluationPipeline()
     eval_pipe.add_metric(YearlyROCAUCFunction(), {"max_followup": 5})
