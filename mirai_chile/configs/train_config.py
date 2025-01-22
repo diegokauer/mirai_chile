@@ -18,7 +18,7 @@ class TrainEncoderHiddenConfig(AbstractConfig):
 
 
 class TrainTransformerCPFHiddenConfig(AbstractConfig):
-    use_precomputed_encoder_hidden = True
+    use_precomputed_transformer_hidden = True
     use_original_aggregate = True
     precompute_mode = True
     freeze_encoder = True
