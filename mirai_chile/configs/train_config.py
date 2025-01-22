@@ -15,3 +15,12 @@ class TrainEncoderHiddenConfig(AbstractConfig):
     freeze_encoder = True
     freeze_transformer = False
     freeze_risk_factor_layer = True
+
+
+class TrainTransformerCPFHiddenConfig(AbstractConfig):
+    use_precomputed_encoder_hidden = True
+    use_original_aggregate = True
+    precompute_mode = True
+    freeze_encoder = True
+    freeze_transformer = False
+    freeze_risk_factor_layer = True

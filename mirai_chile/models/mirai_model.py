@@ -26,6 +26,9 @@ class MiraiChile(nn.Module):
             self.load_transformer(args.transformer_path)
         self.loss_function = loss_function
 
+        for param in self.parameters():
+            param.requires_grad = True
+
         # Freeze backbone of model
         for param in self._encoder.parameters():
             param.requires_grad = not args.freeze_encoder
