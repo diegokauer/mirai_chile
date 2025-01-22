@@ -84,23 +84,31 @@ def main(args):
     eval_pipe.add_metric(YearlyROCAUCFunction(), {"max_followup": 5})
     eval_pipe.add_metric(YearlyROCAUCManufacturerFunction(), {"max_followup": 5})
 
+    best = 0
+
     print("Beginning training...")
     for epoch in range(epochs):
         print(f"Epoch: {epoch}")
         train_model(ddp_model, "transformer_hidden", local_rank, train_dataloader, optimizer, epoch, dry_run)
-        test_model(ddp_model, "transformer_hidden", local_rank, DataLoader(dataset, **test_kwargs), eval_pipe, dry_run)
+        # test_model(ddp_model, "transformer_hidden", local_rank, DataLoader(dataset, **test_kwargs), eval_pipe, dry_run)
         if save_each_epoch and save_model:
             torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_transformer_pmf_epoch_{epoch}_{rank}_mp.pt")
 
-    if save_model:
-        torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_transformer_pmf_final_{rank}_mp.pt")
+        print("Predicting future cancer probabilities...")
+        prob_df = predict_probas(model, "transformer_hidden", local_rank, DataLoader(dataset, **test_kwargs),
+                                 dry_run=dry_run)
+        eval_pipe.flush()
+        eval_pipe.eval_dataset(prob_df)
+        print(eval_pipe)
 
-    print("Predicting future cancer probabilities...")
-    prob_df = predict_probas(model, "transformer_hidden", local_rank, DataLoader(dataset, **test_kwargs),
-                             dry_run=dry_run)
-    eval_pipe.flush()
-    eval_pipe.eval_dataset(prob_df)
-    print(eval_pipe)
+        res = sum(eval_pipe.metrics[0])
+        if res >= best:
+            best = res
+            prob_df.to_csv("best_transformer_hidden_preds.csv")
+
+        if save_model:
+            torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_transformer_pmf_final_{rank}_mp.pt")
+
 
     dist.destroy_process_group()
 
