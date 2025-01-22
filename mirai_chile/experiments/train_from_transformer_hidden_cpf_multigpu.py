@@ -105,17 +105,20 @@ def main(args):
         if save_each_epoch and save_model:
             torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_transformer_pmf_epoch_{epoch}_{rank}_mp.pt")
 
-    if save_model:
-        torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_transformer_pmf_final_{rank}_mp.pt")
+        print("Predicting future cancer probabilities...")
+        prob_df = predict_probas(model, "transformer_hidden", local_rank, DataLoader(dataset, **test_kwargs),
+                                 dry_run=dry_run)
+        eval_pipe.flush()
+        eval_pipe.eval_dataset(prob_df)
+        print(eval_pipe)
 
-    print("Predicting future cancer probabilities...")
-    prob_df = predict_probas(model, "transformer_hidden", local_rank, DataLoader(dataset, **test_kwargs),
-                             dry_run=dry_run)
-    eval_pipe.flush()
-    eval_pipe.eval_dataset(prob_df)
-    print(eval_pipe)
+        res = sum(eval_pipe.results[0])
+        if res >= best:
+            best = res
+            prob_df.to_csv("best_transformer_hidden_preds_cpl.csv")
 
-    dist.destroy_process_group()
+        if save_model:
+            torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_transformer_pmf_final_{rank}_mp.pt")
 
 
 if __name__ == "__main__":

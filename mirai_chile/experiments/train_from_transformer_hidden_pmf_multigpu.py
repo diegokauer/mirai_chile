@@ -113,7 +113,7 @@ def main(args):
         eval_pipe.eval_dataset(prob_df)
         print(eval_pipe)
 
-        res = sum(eval_pipe.metrics[0])
+        res = sum(eval_pipe.results[0])
         if res >= best:
             best = res
             prob_df.to_csv("best_transformer_hidden_preds.csv")
