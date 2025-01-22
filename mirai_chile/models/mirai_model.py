@@ -31,8 +31,8 @@ class MiraiChile(nn.Module):
             param.requires_grad = not args.freeze_encoder
         for param in self._transformer.parameters():
             param.requires_grad = not args.freeze_transformer
-        # for param in self._transformer.pool.parameters():
-        #     param.requires_grad = not args.freeze_risk_factor_layer
+        for param in self._transformer.pool.parameters():
+            param.requires_grad = not args.freeze_risk_factor_layer
         for param in self._encoder.pool.parameters():
             param.requires_grad = not args.freeze_risk_factor_layer
 
