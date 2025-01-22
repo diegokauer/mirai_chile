@@ -61,6 +61,7 @@ class MiraiChile(nn.Module):
             transformer_hidden = self.aggregate_and_classify_transformer(transformer_hidden)
 
         if hasattr(self.args, "use_original_aggregate") and self.args.use_original_aggregate:
+            transformer_hidden = x[:, :512]
             logit, transformer_hidden = self._transformer.aggregate_and_classify(transformer_hidden)
         else:
             logit = self.head(transformer_hidden)
