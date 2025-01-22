@@ -1,13 +1,13 @@
 import torch
+from mirai_chile.models.loss.abstract_loss import AbstractLoss
 from torch import nn
 
 
-class MiraiLoss(nn.Module):
+class MiraiLoss(AbstractLoss):
     def __init__(self, args):
         super().__init__()
         self.args = args
         self.loss = nn.functional.binary_cross_entropy_with_logits
-        self.relu = nn.ReLU()
 
     def forward(self, logits, pmf, s, t, d):
         """
