@@ -57,7 +57,7 @@ class CumulativeProbabilityLayer(AbstractLayer):
                 pred_y[i] = self._calibrator[i].predict_proba(probs[0, i].reshape(-1, 1)).flatten()[1]
 
         s = 1 - pred_y
-        s_inv = troch.tensor(1 - s)
+        s_inv = torch.tensor(1 - s)
         pmf = torch.matmul(s_inv, self.dif_matrix.to(device))
 
         return s, pmf
