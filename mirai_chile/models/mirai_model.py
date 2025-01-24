@@ -5,7 +5,6 @@ from torch import nn
 
 from mirai_chile.configs.abstract_config import AbstractConfig
 from mirai_chile.models.abstract_layer import AbstractLayer
-from mirai_chile.models.loss.abstract_loss import AbstractLoss
 
 
 class MiraiChile(nn.Module):
@@ -15,7 +14,6 @@ class MiraiChile(nn.Module):
             head=AbstractLayer(),
             encoder=None,
             transformer=None,
-            loss_function=AbstractLoss()
     ):
         super().__init__()
         self.args = args
@@ -26,7 +24,6 @@ class MiraiChile(nn.Module):
         self.head.args = args
         if transformer is None:
             self.load_transformer(args.transformer_path)
-        self.loss_function = loss_function
 
         for param in self.parameters():
             param.requires_grad = True
@@ -131,7 +128,6 @@ class MiraiChile(nn.Module):
     def to_device(self, device):
         self.args.device = device
         self.head.to_device(device)
-        self.loss_function.to_device(device)
         self.to(device)
         self._transformer.to(device)
         self._encoder.to(device)
