@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 
-from mirai_chile.models.loss.abstract_loss import AbstractLoss
+from mirai_chile.loss.abstract_loss import AbstractLoss
 
 
 class PMFLoss(AbstractLoss):

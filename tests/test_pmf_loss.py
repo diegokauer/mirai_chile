@@ -1,7 +1,8 @@
 import unittest
 
 import torch
-from mirai_chile.models.loss.pmf_loss import PMFLoss
+
+from mirai_chile.loss.pmf_loss import PMFLoss
 from mirai_chile.models.pmf_layer import PMFLayer
 
 

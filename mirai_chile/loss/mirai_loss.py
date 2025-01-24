@@ -1,6 +1,7 @@
 import torch
-from mirai_chile.models.loss.abstract_loss import AbstractLoss
 from torch import nn
+
+from mirai_chile.loss.abstract_loss import AbstractLoss
 
 
 class MiraiLoss(AbstractLoss):
