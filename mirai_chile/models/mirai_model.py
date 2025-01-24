@@ -1,10 +1,11 @@
 import os
 
 import torch
+from torch import nn
+
 from mirai_chile.configs.abstract_config import AbstractConfig
 from mirai_chile.models.abstract_layer import AbstractLayer
 from mirai_chile.models.loss.abstract_loss import AbstractLoss
-from torch import nn
 
 
 class MiraiChile(nn.Module):
@@ -22,6 +23,7 @@ class MiraiChile(nn.Module):
         if encoder is None:
             self.load_encoder(args.encoder_path)
         self.head = head
+        self.head.args = args
         if transformer is None:
             self.load_transformer(args.transformer_path)
         self.loss_function = loss_function

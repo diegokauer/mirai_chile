@@ -50,3 +50,6 @@ class EncoderHiddenDataset(Dataset):
 
     def get_split(self, split):
         return EncoderHiddenDataset(self.dataframe[self.dataframe.split == split])
+
+    def get_manufacturer(self, manufacturer):
+        return EncoderHiddenDataset(self.dataframe[self.dataframe.machine_manudacturer == manufacturer])

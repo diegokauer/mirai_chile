@@ -1,7 +1,10 @@
+import pickle
+
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from mirai_chile.configs.abstract_config import AbstractConfig
 from mirai_chile.models.abstract_layer import AbstractLayer
 
@@ -41,7 +44,7 @@ class CumulativeProbabilityLayer(AbstractLayer):
         #        hazards = self.hazard_fc(x)
         hazards = self.hazards(x)
         B, T = hazards.size()  # hazards is (B, T)
-        expanded_hazards = hazards.unsqueeze(-1).expand(B, T, T)  # expanded_hazards is (B,T, T)
+        expanded_hazards = hazards.unsqueeze(-1).expand(B, T, T)  # expanded_hazards is (B, T, T)
         masked_hazards = expanded_hazards * self.upper_triagular_mask  # masked_hazards now (B,T, T)
         cum_prob = torch.sum(masked_hazards, dim=1) + self.base_hazard_fc(x)
         return cum_prob

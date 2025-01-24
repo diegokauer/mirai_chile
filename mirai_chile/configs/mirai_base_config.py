@@ -3,7 +3,7 @@ from mirai_chile.configs.abstract_config import AbstractConfig
 
 class MiraiBaseConfig(AbstractConfig):
     make_probs_indep = False
-    use_original_aggregate = True
+    use_original_aggregate = False
 
 
 class MiraiBaseConfigEval(AbstractConfig):

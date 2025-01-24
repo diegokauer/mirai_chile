@@ -43,3 +43,6 @@ class TransformerHiddenDataset(Dataset):
 
     def get_split(self, split):
         return TransformerHiddenDataset(self.dataframe[self.dataframe.split == split])
+
+    def get_manufacturer(self, manufacturer):
+        return TransformerHiddenDataset(self.dataframe[self.dataframe.machine_manudacturer == manufacturer])

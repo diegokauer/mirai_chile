@@ -43,3 +43,6 @@ class LogitDataset(Dataset):
 
     def get_split(self, split):
         return LogitDataset(self.dataframe[self.dataframe.split == split])
+
+    def get_manufacturer(self, manufacturer):
+        return LogitDataset(self.dataframe[self.dataframe.machine_manudacturer == manufacturer])

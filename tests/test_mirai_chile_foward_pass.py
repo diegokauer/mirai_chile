@@ -1,6 +1,7 @@
 import unittest
 
 import torch
+
 from mirai_chile.configs.mirai_base_config import MiraiBaseConfig, MiraiBaseConfigEval
 from mirai_chile.configs.mirai_chile_config import MiraiChileConfig
 from mirai_chile.data.generate_dataset import create_dataloader, PNGDataset
@@ -91,7 +92,7 @@ class TestMiraiForwardPass(unittest.TestCase):
 
     def test_pre_processing_mirai_eval_single_dataloader(self):
         input = self.dataloader_input
-        logit, transformer_hidden, encoder_hidden = self.mirai_eval(input["images"], input["batch"])
+        logit, transformer_hidden, encoder_hidden = self.mirai_base_cpl(input["images"], input["batch"])
         self.assertEqual(torch.Size([1, 5]), logit.shape)
         self.assertEqual(torch.Size([1, 612]), transformer_hidden.shape)
         self.assertEqual(torch.Size([1, 512 * 4]), encoder_hidden.shape)
