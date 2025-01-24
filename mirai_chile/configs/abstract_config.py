@@ -9,6 +9,7 @@ class AbstractConfig:
     freeze_encoder = True
     freeze_transformer = False
     freeze_risk_factor_layer = True
+    make_probs_indep = True
     img_mean = [
         7047.99
     ]
