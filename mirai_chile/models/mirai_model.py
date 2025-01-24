@@ -122,7 +122,7 @@ class MiraiChile(nn.Module):
         self._encoder.args.use_pred_risk_factors_at_test = True
 
     def load_transformer(self, path):
-        model_path = os.path.expanduser(path)
+        model_path = os.path.abspath(os.path.expanduser(path))
         self._transformer = torch.load(model_path, map_location='cpu')
 
     def to_device(self, device):

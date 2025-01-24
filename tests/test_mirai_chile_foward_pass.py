@@ -33,13 +33,13 @@ class TestMiraiForwardPass(unittest.TestCase):
     batched_input = torch.ones((7, 3, 4, 20, 16))
 
     single_unprocessed_exam = [
-        "C:/Users/Usuario/Documents/MirAi/MiraiChile/mirai_chile/data/examples/png/000001_1_CC_L.png",
-        "C:/Users/Usuario/Documents/MirAi/MiraiChile/mirai_chile/data/examples/png/000001_1_CC_R.png",
-        "C:/Users/Usuario/Documents/MirAi/MiraiChile/mirai_chile/data/examples/png/000001_1_MLO_L.png",
-        "C:/Users/Usuario/Documents/MirAi/MiraiChile/mirai_chile/data/examples/png/000001_1_MLO_R.png"
+        "../mirai_chile/data/examples/png/000001_1_CC_L.png",
+        "../mirai_chile/data/examples/png/000001_1_CC_R.png",
+        "../mirai_chile/data/examples/png/000001_1_MLO_L.png",
+        "../mirai_chile/data/examples/png/000001_1_MLO_R.png"
     ]
 
-    dataset = PNGDataset("C:/Users/Usuario/Documents/MirAi/MiraiChile/mirai_chile/data/examples/png", pmf_args)
+    dataset = PNGDataset("../mirai_chile/data/examples/png", pmf_args)
     dataloader = create_dataloader(dataset)
     dataloader_input = next(iter(dataloader))
 
