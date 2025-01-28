@@ -3,7 +3,7 @@ import torch
 from torch.nn.parallel import DistributedDataParallel as DDP
 
 
-def test_model(model, dataset, device, dataloader, eval_pipeline=None, dry_run=False, epoch=None):
+def test_model(model, loss_function, dataset, device, dataloader, eval_pipeline=None, dry_run=False, epoch=None):
     assert dataset in ["logit", "transformer_hidden", "encoder_hidden"]
 
     test_loss = 0
@@ -29,10 +29,7 @@ def test_model(model, dataset, device, dataloader, eval_pipeline=None, dry_run=F
             t = data["time_to_event"].to(device)
             d = data["cancer"].to(device)
 
-            if isinstance(model, DDP):
-                loss = model.module.loss_function(logit, pmf, s, t, d)
-            else:
-                loss = model.loss_function(logit, pmf, s, t, d)
+            loss = loss_function(logit, pmf, s, t, d)
             test_loss += loss.item()
 
             s_inv = 1 - s
@@ -60,31 +57,3 @@ def test_model(model, dataset, device, dataloader, eval_pipeline=None, dry_run=F
     if not eval_pipeline is None:
         eval_pipeline.eval_dataset(data)
         print(eval_pipeline)
-
-    # for manufacturer in data.machine_manufacturer.unique():
-    #     _, ax = plt.subplots()
-    #
-    #     df = data[data.machine_manufacturer == manufacturer].reset_index(drop=True)
-    #
-    #     for followup in range(5):
-    #
-    #         df.loc[:, 'included'] = False
-    #         df.loc[(df.cancer == 1) & (df.time_to_event <= followup), 'included'] = True
-    #         df.loc[df.time_to_event >= followup, 'included'] = True
-    #
-    #         sub_df = df[df.included]
-    #         g = ((sub_df.cancer == 1) & (sub_df.time_to_event <= followup))
-    #
-    #         probs = sub_df[['year_1', 'year_2', 'year_3', 'year_4', 'year_5']].to_numpy()
-    #         if followup == 0:
-    #             N = len(sub_df)
-    #
-    #         if followup == 4:
-    #             RocCurveDisplay.from_predictions(g, probs[:, followup], ax=ax, name=f'year{followup + 1}',
-    #                                              plot_chance_level=True)
-    #         else:
-    #             RocCurveDisplay.from_predictions(g, probs[:, followup], ax=ax, name=f'year{followup + 1}')
-    #
-    #     ax.set_title('Manufacturer: ' + manufacturer + f" (n={N} examinations)")
-    #     plt.grid()
-    #     plt.show()
