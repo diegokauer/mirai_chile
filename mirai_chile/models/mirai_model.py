@@ -1,10 +1,10 @@
 import os
 
 import torch
-from torch import nn
-
 from mirai_chile.configs.abstract_config import AbstractConfig
+from mirai_chile.loss.abstract_loss import AbstractLoss
 from mirai_chile.models.abstract_layer import AbstractLayer
+from torch import nn
 
 
 class MiraiChile(nn.Module):
@@ -12,6 +12,7 @@ class MiraiChile(nn.Module):
             self,
             args=AbstractConfig(),
             head=AbstractLayer(),
+            loss_function=AbstractLoss(),
             encoder=None,
             transformer=None,
     ):
@@ -24,6 +25,7 @@ class MiraiChile(nn.Module):
         self.head.args = args
         if transformer is None:
             self.load_transformer(args.transformer_path)
+        self.loss_function = loss_function
 
         for param in self.parameters():
             param.requires_grad = True
