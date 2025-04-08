@@ -1,8 +1,9 @@
 ### Python template
 # Project Specific
-/mirai_chile/data/examples/dcm/*
+/mirai_chile/data/examples/*
 /mirai_chile/data/output/*
 /mirai_chile/data/dataset/*
+/mirai_chile/model_evaluation/*.csv
 **/*.lprof
 **/scratch*.py
 /mirai_chile/checkpoints/*.pt
