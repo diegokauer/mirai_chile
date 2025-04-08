@@ -1,10 +1,11 @@
 import os
 import traceback
 
-import mirai_chile.models.transformers.factory as transformer_factory
 import numpy as np
 import torch
 from PIL import Image
+
+import mirai_chile.models.transformers.factory as transformer_factory
 from mirai_chile.models.transformers.basic import ComposeTrans
 from mirai_chile.models.utils import parsing
 
@@ -12,12 +13,16 @@ from mirai_chile.models.utils import parsing
 def pre_process_images(png_list, args, direct_call=False):
     images = read_pngs(png_list)
 
-    test_image_transformers = parsing.parse_transformers(args.test_image_transformers)
-    test_tensor_transformers = parsing.parse_transformers(args.test_tensor_transformers)
-    test_transformers = transformer_factory.get_transformers(test_image_transformers, test_tensor_transformers, args)
+    if not args.train:
+        test_image_transformers = parsing.parse_transformers(args.test_image_transformers)
+        test_tensor_transformers = parsing.parse_transformers(args.test_tensor_transformers)
+        transformers = transformer_factory.get_transformers(test_image_transformers, test_tensor_transformers, args)
+    else:
+        train_image_transformers = parsing.parse_transformers(args.image_transformers)
+        train_tensor_transformers = parsing.parse_transformers(args.tensor_transformers)
+        transformers = transformer_factory.get_transformers(train_image_transformers, train_tensor_transformers, args)
 
-    transforms = ComposeTrans(test_transformers)
-
+    transforms = ComposeTrans(transformers)
     x, batch = collate_batch(images, transforms)
 
     x.to(args.device)

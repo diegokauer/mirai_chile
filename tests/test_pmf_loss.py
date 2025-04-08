@@ -2,6 +2,7 @@ import unittest
 
 import torch
 
+from mirai_chile.configs.mirai_chile_config import MiraiChileConfig
 from mirai_chile.loss.pmf_loss import PMFLoss
 from mirai_chile.models.pmf_layer import PMFLayer
 
@@ -12,7 +13,7 @@ class PMFLossTestCase(unittest.TestCase):
         device = 'cuda'
 
     loss = PMFLoss().to_device(device)
-    pmf_layer = PMFLayer(10).to_device(device)
+    pmf_layer = PMFLayer(10, args=MiraiChileConfig()).to_device(device)
 
     logit = torch.tensor([[-0.810, -0.724, -0.724, -0.724, -0.724]]).to(device)
     pmf = torch.tensor([[0.1, 0.2, 0.1, 0.3, 0.05]]).to(device)
@@ -28,7 +29,9 @@ class PMFLossTestCase(unittest.TestCase):
                 t = torch.tensor([[t_i]], device=self.device)
                 d = torch.tensor([[d_i]], device=self.device)
 
-                loss = self.loss(logit, pmf, s, t, d).cpu()
+                batch = {}
+                batch['logit'], batch['pmf'], batch['time_to_event'], batch['cancer'] = logit, pmf, t, d
+                loss = self.loss(batch).cpu()
 
                 # self.assertEqual(-torch.log(torch.tensor(1e-9)), loss)
 
@@ -43,7 +46,10 @@ class PMFLossTestCase(unittest.TestCase):
             for t_i in range(self.loss.args.max_followup):
                 t = torch.tensor([[t_i]], device=self.device).repeat(batch_size, 1)
                 d = torch.tensor([[d_i]], device=self.device).repeat(batch_size, 1)
-                loss = self.loss(logit, pmf, s, t, d).cpu()
+
+                batch = {}
+                batch['logit'], batch['pmf'], batch['time_to_event'], batch['cancer'] = logit, pmf, t, d
+                loss = self.loss(batch).cpu()
 
                 # self.assertEqual(-torch.log(torch.tensor(1e-9)), loss)
 
@@ -57,7 +63,9 @@ class PMFLossTestCase(unittest.TestCase):
                 t = torch.tensor([[t_i]], device=self.device)
                 d = torch.tensor([[d_i]], device=self.device)
 
-                loss = self.loss(logit, pmf, s, t, d).cpu()
+                batch = {}
+                batch['logit'], batch['pmf'], batch['time_to_event'], batch['cancer'] = logit, pmf, t, d
+                loss = self.loss(batch).cpu()
 
                 # self.assertEqual(-torch.log(torch.tensor(1)), loss)
 
@@ -72,7 +80,10 @@ class PMFLossTestCase(unittest.TestCase):
             for t_i in range(self.loss.args.max_followup):
                 t = torch.tensor([[t_i]], device=self.device).repeat(batch_size, 1)
                 d = torch.tensor([[d_i]], device=self.device).repeat(batch_size, 1)
-                loss = self.loss(logit, pmf, s, t, d).cpu()
+
+                batch = {}
+                batch['logit'], batch['pmf'], batch['time_to_event'], batch['cancer'] = logit, pmf, t, d
+                loss = self.loss(batch).cpu()
 
                 # self.assertEqual(-torch.log(torch.tensor(1)), loss)
 
@@ -81,7 +92,10 @@ class PMFLossTestCase(unittest.TestCase):
             for t_i in range(self.loss.args.max_followup):
                 t = torch.tensor([[t_i]], device=self.device)
                 d = torch.tensor([[d_i]], device=self.device)
-                loss = self.loss(self.logit, self.pmf, self.s, t, d).cpu()
+
+                batch = {}
+                batch['logit'], batch['pmf'], batch['time_to_event'], batch['cancer'] = self.logit, self.pmf, t, d
+                loss = self.loss(batch).cpu()
 
                 # if d_i == 1:
                 #     self.assertEqual(-torch.log(self.pmf[0, t_i]).cpu(), loss)
@@ -96,7 +110,10 @@ class PMFLossTestCase(unittest.TestCase):
 
                 t = torch.tensor([[t_i]], device=self.device)
                 d = torch.tensor([[d_i]], device=self.device)
-                loss = self.loss(logit, pmf, s, t, d)
+
+                batch = {}
+                batch['logit'], batch['pmf'], batch['time_to_event'], batch['cancer'] = logit, pmf, t, d
+                loss = self.loss(batch)
 
                 loss.backward()
             self.assertEqual(torch.Size((1, 5)), logit.grad.shape)
@@ -107,7 +124,10 @@ class PMFLossTestCase(unittest.TestCase):
         s = torch.ones((2, 5), device=self.device)
         t = torch.tensor([[10], [5]], device=self.device)
         d = torch.tensor([[1], [1]], device=self.device)
-        loss = self.loss(logit, pmf, s, t, d).cpu()
+
+        batch = {}
+        batch['logit'], batch['pmf'], batch['time_to_event'], batch['cancer'] = logit, pmf, t, d
+        loss = self.loss(batch).cpu()
 
         # self.assertEqual(-torch.log(torch.tensor(1)), loss)
 
@@ -117,7 +137,10 @@ class PMFLossTestCase(unittest.TestCase):
         s = torch.ones((2, 5), device=self.device)
         t = torch.tensor([[10], [5]], device=self.device)
         d = torch.tensor([[0], [0]], device=self.device)
-        loss = self.loss(logit, pmf, s, t, d).cpu()
+
+        batch = {}
+        batch['logit'], batch['pmf'], batch['time_to_event'], batch['cancer'] = logit, pmf, t, d
+        loss = self.loss(batch).cpu()
 
         # self.assertEqual(-torch.log(torch.tensor(1)), loss)
 

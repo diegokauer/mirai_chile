@@ -8,7 +8,7 @@ class AbstractLoss(nn.Module):
         super().__init__()
         self.args = args
 
-    def forward(self, logit, pmf, s, t, d):
+    def forward(self, batch):
         pass
 
     def to_device(self, device):

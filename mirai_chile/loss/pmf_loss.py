@@ -1,11 +1,12 @@
 import torch
 import torch.nn.functional as F
 
+from mirai_chile.configs.abstract_config import AbstractConfig
 from mirai_chile.loss.abstract_loss import AbstractLoss
 
 
 class PMFLoss(AbstractLoss):
-    def __init__(self, args=None):
+    def __init__(self, args=AbstractConfig()):
         super().__init__()
         if not (args is None):
             self.args = args
@@ -25,12 +26,14 @@ class PMFLoss(AbstractLoss):
         # Ones vector for cumulative probability calculation
         self.register_buffer('ones', torch.ones(self.args.max_followup, dtype=torch.float32))
 
-    def forward(self, logit, pmf, s, t, d):
+    def forward(self, batch):
         # """
         # logit: Tensor of shape (B, T)
         # t: Indices for the time step, shape (B,)
         # d: Indicators for event occurrence, shape (B,)
         # """
+        logit, pmf, time_to_event, cancer = batch['logit'], batch['pmf'], batch['time_to_event'], batch['cancer']
+
         device = self.args.device
         B, N = logit.size()
 
@@ -50,8 +53,8 @@ class PMFLoss(AbstractLoss):
         s = s[:, :-1]
         pmf = pmf[:, :-1]
 
-        d[(t >= self.args.max_followup) & (d == 1)] = 0
-        t = torch.clamp(t, max=self.args.max_followup - 1)  # Make t in range[0, 4]
+        cancer[(time_to_event >= self.args.max_followup) & (cancer == 1)] = 0
+        t = torch.clamp(time_to_event, max=self.args.max_followup - 1)  # Make t in range[0, 4]
 
         # Ensure t is used correctly
         batch_indices = torch.arange(logit.size(0), device=logit.device)
@@ -59,7 +62,7 @@ class PMFLoss(AbstractLoss):
         s_t = s[batch_indices, t]
 
         # Numerical stability in log computation
-        loss = d * torch.log(torch.clamp(pmf_t, min=1e-9)) + (1 - d) * torch.log(torch.clamp(s_t, min=1e-9))
+        loss = cancer * torch.log(torch.clamp(pmf_t, min=1e-9)) + (1 - cancer) * torch.log(torch.clamp(s_t, min=1e-9))
         return -torch.mean(loss)  # Negative log likelihood
 
         # d[(t >= self.args.max_followup) & (d == 1)] = 0

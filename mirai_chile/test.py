@@ -3,7 +3,8 @@ import torch
 from torch.nn.parallel import DistributedDataParallel as DDP
 
 
-def test_model(model, loss_function, dataset, device, dataloader, eval_pipeline=None, dry_run=False, epoch=None):
+def test_model(model, loss_function, dataset, device, dataloader, eval_pipeline=None, dry_run=False,
+               print_result=False):
     assert dataset in ["logit", "transformer_hidden", "encoder_hidden"]
 
     test_loss = 0
@@ -13,7 +14,7 @@ def test_model(model, loss_function, dataset, device, dataloader, eval_pipeline=
     with torch.no_grad():
         for batch_idx, data in enumerate(dataloader):
 
-            data[dataset] = data[dataset].to(device)
+            data['data'] = data['data'].to(device)
 
             if "batch" in data:
                 for key, val in data["batch"].items():
@@ -21,15 +22,17 @@ def test_model(model, loss_function, dataset, device, dataloader, eval_pipeline=
             else:
                 data["batch"] = None
 
-            logit, _, _ = model(data[dataset], data["batch"])
+            logit, _, _ = model(data["data"], data["batch"])
             if isinstance(model, DDP):
                 pmf, s = model.module.head.logit_to_cancer_prob(logit)
             else:
                 pmf, s = model.head.logit_to_cancer_prob(logit)
-            t = data["time_to_event"].to(device)
-            d = data["cancer"].to(device)
+            data["time_to_event"] = data["time_to_event"].to(device)
+            data["cancer"] = data["cancer"].to(device)
+            data["logit"] = logit.to(device)
+            data["pmf"] = pmf.to(device)
 
-            loss = loss_function(logit, pmf, s, t, d)
+            loss = loss_function(data)
             test_loss += loss.item()
 
             s_inv = 1 - s
@@ -52,8 +55,12 @@ def test_model(model, loss_function, dataset, device, dataloader, eval_pipeline=
         test_loss, test_loss / len(dataloader.dataset), test_loss / len(dataloader)))
 
     data = pd.DataFrame(probs_table)
-    print(data.head())
+    print(data[data.cancer == 1].head())
+    print(data[data.cancer == 0].head())
 
     if not eval_pipeline is None:
         eval_pipeline.eval_dataset(data)
-        print(eval_pipeline)
+        if print_result:
+            print(eval_pipeline)
+
+    return eval_pipeline

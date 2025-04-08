@@ -1,11 +1,12 @@
 ### Python template
 # Project Specific
-/mirai_chile/data/examples/*
-/mirai_chile/data/output/*
-/mirai_chile/data/dataset/*
+/M_CHILE/mirai_chile/data/examples/dcm/*
+/M_CHILE/mirai_chile/data/output/*
+/M_CHILE/mirai_chile/data/dataset/*
 **/*.lprof
 **/scratch.py
-/mirai_chile/checkpoints/*.pt
+/M_CHILE/mirai_chile/checkpoints/*.pt
+/myenv/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

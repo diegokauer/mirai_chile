@@ -3,11 +3,11 @@ import os
 import pprint
 
 import torch
-from mirai_chile.configs.mirai_chile_config import MiraiChileConfig
+
+from mirai_chile.configs.mirai_base_config import MiraiBaseConfigEval
 from mirai_chile.data.pre_processing import pre_process_images
-from mirai_chile.loss.pmf_loss import PMFLoss
+from mirai_chile.models.cumulative_probability_layer import CumulativeProbabilityLayer
 from mirai_chile.models.mirai_model import MiraiChile
-from mirai_chile.models.pmf_layer import PMFLayer
 
 
 def predict_images(imgs, view_saliency, grad_dir):
@@ -15,11 +15,12 @@ def predict_images(imgs, view_saliency, grad_dir):
     if torch.cuda.is_available():
         device = torch.device('cuda')
 
-    model_args = MiraiChileConfig
-    head = PMFLayer(612)
-    model = MiraiChile(args=model_args, head=head, loss_function=PMFLoss())
-    model.load_state_dict(
-        torch.load(os.path.expanduser(os.path.join('~/.mirai_chile', model_args.model_path)), map_location='cpu'))
+    model_args = MiraiBaseConfigEval()
+    head = CumulativeProbabilityLayer(612, args=model_args)
+    model = MiraiChile(args=model_args, head=head)
+    model.to_device(device)
+    # model.load_state_dict(
+    #     torch.load(os.path.expanduser(os.path.join('~/.mirai_chile', model_args.model_path)), map_location='cpu'))
     model.eval()
 
     # model = torch.load(os.path.join(__module_path__, model_args.model_path))
@@ -35,8 +36,7 @@ def predict_images(imgs, view_saliency, grad_dir):
 
     pmf, s = model.head.logit_to_cancer_prob(logit)
     s_inv = 1 - s.squeeze()
-
-    s_inv = [i.item() * 100 for i in s_inv]
+    s_inv = [i.item() for i in s_inv]
 
     if view_saliency:
         pmf.sum().backward()

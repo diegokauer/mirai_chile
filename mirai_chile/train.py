@@ -1,89 +1,74 @@
-from torch.nn.parallel import DistributedDataParallel as DDP
+import numpy as np
+import torch
 from tqdm import tqdm
 
-
-def train_model(model, loss_function, dataset, device, dataloader, optimizer, epoch, dry_run=False):
-    assert dataset in ["logit", "transformer_hidden", "encoder_hidden"]
-
-    train_loss = 0
-
-    model.train()
-
-    with tqdm(total=len(dataloader), desc=f"Epoch {epoch + 1} - Train", unit="batch") as pbar:
-        for batch_idx, data in enumerate(dataloader):
-
-            data[dataset] = data[dataset].to(device)
-
-            if "batch" in data:
-                for key, val in data["batch"].items():
-                    data["batch"][key] = val.to(device)
-            else:
-                data["batch"] = None
-
-            optimizer.zero_grad()
-            logit, _, _ = model(data[dataset], data["batch"])
-            # print(logit)
-            if isinstance(model, DDP):
-                pmf, s = model.module.head.logit_to_cancer_prob(logit)
-            else:
-                pmf, s = model.head.logit_to_cancer_prob(logit)
-            t = data["time_to_event"].to(device)
-            d = data["cancer"].to(device)
-
-            loss = loss_function(logit, pmf, s, t, d)
-            loss.backward()
-            optimizer.step()
-
-            train_loss += loss.item()
-            current_train_loss = train_loss / (pbar.n + 1)  # Average loss up to the current batch
-            pbar.set_postfix(
-                {'Batch Loss': f"{loss.item():.4f}", 'Current Train Loss': f"{current_train_loss:.4f}"})
-            pbar.update(1)
-
-    print('\nTrain set: Total loss: {:.6f}\tAverage loss: {:.6f}\tAverage batch loss: {:.6f}'.format(
-        train_loss, train_loss / len(dataloader.dataset), train_loss / len(dataloader)))
+from mirai_chile.test import test_model
+from mirai_chile.train_step import mirai_step
 
 
-def train_model(model, dataset, device, dataloader, optimizer, epoch, dry_run=False):
-    assert dataset in ["logit", "transformer_hidden", "encoder_hidden"]
+def train_epoch(models, optimizers, loss_functions, device, dataloaders, epoch, dry_run=False):
 
     train_loss = 0
+    train_dataloader = dataloaders['train']
 
-    model.train()
+    with tqdm(total=len(train_dataloader), desc=f"Epoch {epoch} - Train", unit="batch") as pbar:
+        for batch_idx, data in enumerate(train_dataloader):
 
-    with tqdm(total=len(dataloader), desc=f"Epoch {epoch + 1} - Train", unit="batch") as pbar:
-        for batch_idx, data in enumerate(dataloader):
+            batch_loss, _ = mirai_step(data, models, optimizers, device, loss_functions, dry_run)
 
-            data[dataset] = data[dataset].to(device)
-
-            if "batch" in data:
-                for key, val in data["batch"].items():
-                    data["batch"][key] = val.to(device)
-            else:
-                data["batch"] = None
-
-            optimizer.zero_grad()
-            logit, _, _ = model(data[dataset], data["batch"])
-            # print(logit)
-            if isinstance(model, DDP):
-                pmf, s = model.module.head.logit_to_cancer_prob(logit)
-            else:
-                pmf, s = model.head.logit_to_cancer_prob(logit)
-            t = data["time_to_event"].to(device)
-            d = data["cancer"].to(device)
-
-            if isinstance(model, DDP):
-                loss = model.module.loss_function(logit, pmf, s, t, d)
-            else:
-                loss = model.loss_function(logit, pmf, s, t, d)
-            loss.backward()
-            optimizer.step()
-
-            train_loss += loss.item()
+            batch_loss = batch_loss.item()
+            train_loss += batch_loss
             current_train_loss = train_loss / (pbar.n + 1)  # Average loss up to the current batch
+
             pbar.set_postfix(
-                {'Batch Loss': f"{loss.item():.4f}", 'Current Train Loss': f"{current_train_loss:.4f}"})
+                {'Batch Loss': f"{batch_loss:.4f}", 'Current Train Loss': f"{current_train_loss:.4f}"})
             pbar.update(1)
 
-    print('\nTrain set: Total loss: {:.6f}\tAverage loss: {:.6f}\tAverage batch loss: {:.6f}'.format(
-        train_loss, train_loss / len(dataloader.dataset), train_loss / len(dataloader)))
+            if dry_run:
+                break
+
+    return current_train_loss
+
+
+def train_model(models, loss_functions, dataset, device, dataloaders, optimizers, epochs, eval_pipeline, dry_run=False):
+    assert dataset in ["logit", "transformer_hidden", "encoder_hidden"]
+
+    patience = 5
+    best_metric = -np.inf
+    best_state = None
+    counter = 0
+
+    models['mirai'].train()
+    models['discriminator'].train()
+
+    for epoch in range(1, epochs + 1):
+        train_loss = train_epoch(models, optimizers, loss_functions, device, dataloaders, epoch, dry_run)
+
+        results = test_model(
+            models['mirai'],
+            loss_functions['mirai'],
+            dataset,
+            device,
+            dataloaders['dev'],
+            eval_pipeline,
+            print_result=False
+        )
+        current_metric = results.named_results["C-Index"]
+
+        if current_metric > best_metric:
+            best_metric = current_metric
+            best_state = {key: model.state_dict() for key, model in models.items()}
+            counter = 0  # Reset patience counter
+        else:
+            counter += 1
+
+        print(
+            f"Epoch {epoch}, C-Index: {current_metric:.4f}, Best: {best_metric:.4f}, Patience: {counter}/{patience}")
+
+        if counter >= patience:
+            print("Early stopping triggered. Restoring best model.")
+            for key in models:
+                models[key].load_state_dict(best_state[key])
+            break
+
+        torch.save(models['mirai'].state_dict(), f"mirai_chile/checkpoints/mirai_{dataset}_base_{epoch}.pt")

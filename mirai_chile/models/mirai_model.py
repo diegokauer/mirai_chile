@@ -1,10 +1,10 @@
 import os
 
 import torch
-from mirai_chile.configs.abstract_config import AbstractConfig
-from mirai_chile.loss.abstract_loss import AbstractLoss
-from mirai_chile.models.abstract_layer import AbstractLayer
 from torch import nn
+
+from mirai_chile.configs.abstract_config import AbstractConfig
+from mirai_chile.models.abstract_layer import AbstractLayer
 
 
 class MiraiChile(nn.Module):
@@ -12,7 +12,6 @@ class MiraiChile(nn.Module):
             self,
             args=AbstractConfig(),
             head=AbstractLayer(),
-            loss_function=AbstractLoss(),
             encoder=None,
             transformer=None,
     ):
@@ -25,7 +24,6 @@ class MiraiChile(nn.Module):
         self.head.args = args
         if transformer is None:
             self.load_transformer(args.transformer_path)
-        self.loss_function = loss_function
 
         for param in self.parameters():
             param.requires_grad = True
@@ -39,6 +37,8 @@ class MiraiChile(nn.Module):
             param.requires_grad = not args.freeze_risk_factor_layer
         for param in self._encoder.pool.parameters():
             param.requires_grad = not args.freeze_risk_factor_layer
+        for param in self._transformer.prob_of_failure_layer.parameters():
+            param.requires_grad = not args.freeze_additive_hazard_layer
 
     def forward(self, x, batch=None):
         if hasattr(self.args, "use_precomputed_encoder_hidden") and self.args.use_precomputed_encoder_hidden:
@@ -62,11 +62,10 @@ class MiraiChile(nn.Module):
             transformer_hidden = self.aggregate_and_classify_transformer(transformer_hidden)
 
         if hasattr(self.args, "use_original_aggregate") and self.args.use_original_aggregate:
-            transformer_hidden = x[:, :512]
-            logit, transformer_hidden = self._transformer.aggregate_and_classify(transformer_hidden)
+            # transformer_hidden = x[:, :512]
+            logit = self._transformer.prob_of_failure_layer(transformer_hidden)
         else:
             logit = self.head(transformer_hidden)
-
         return logit, transformer_hidden, encoder_hidden.view(B, -1)
 
     def encoder_forward(self, x):
@@ -120,12 +119,12 @@ class MiraiChile(nn.Module):
 
     def load_encoder(self, path):
         model_path = os.path.expanduser(path)
-        self._encoder = torch.load(model_path, map_location='cpu').module._model
+        self._encoder = torch.load(model_path, map_location='cpu', weights_only=False).module._model
         self._encoder.args.use_pred_risk_factors_at_test = True
 
     def load_transformer(self, path):
         model_path = os.path.abspath(os.path.expanduser(path))
-        self._transformer = torch.load(model_path, map_location='cpu')
+        self._transformer = torch.load(model_path, map_location='cpu', weights_only=False)
 
     def to_device(self, device):
         self.args.device = device

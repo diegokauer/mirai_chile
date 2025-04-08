@@ -1,3 +1,4 @@
+import os
 import pickle
 
 import numpy as np
@@ -53,19 +54,21 @@ class CumulativeProbabilityLayer(AbstractLayer):
         device = self.args.device
 
         probs = self.sigmoid(logit)
-        pred_y = np.zeros(probs.shape[1])
+        s_inv = np.zeros(probs.shape[1])
 
         if hasattr(self.args, "use_calibrator") and self.args.use_calibrator:
             for i in self._calibrator.keys():
-                pred_y[i] = self._calibrator[i].predict_proba(probs[0, i].reshape(-1, 1)).flatten()[1]
+                probs = probs.cpu().numpy()
+                s_inv[i] = self._calibrator[i].predict_proba(probs[0, i].reshape(-1, 1)).flatten()[1]
+            s_inv = torch.tensor(s_inv)
+        else:
+            s_inv = probs
 
-        s = 1 - pred_y
-        s_inv = torch.tensor(1 - s, device=device)
-        pmf = torch.matmul(s_inv, self.dif_matrix.to(device))
-
-        return s, pmf
+        s = 1 - s_inv
+        pmf = torch.matmul(s_inv, self.dif_matrix.to(device).float())
+        return pmf, s
 
     def get_calibrator(self):
-        with open(self.args.calibrator_path, 'rb') as infi:
+        with open(os.path.expanduser(self.args.calibrator_path), 'rb') as infi:
             calibrator = pickle.load(infi)
         self._calibrator = calibrator

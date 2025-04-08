@@ -2,6 +2,8 @@ import unittest
 
 import numpy as np
 import torch
+
+from mirai_chile.configs.mirai_chile_config import MiraiChileConfig
 from mirai_chile.models.pmf_layer import PMFLayer
 
 
@@ -10,7 +12,7 @@ class PMFLayerTestCase(unittest.TestCase):
     if torch.cuda.is_available():
         device = 'cuda'
 
-    pmf_layer = PMFLayer(612)
+    pmf_layer = PMFLayer(612, args=MiraiChileConfig())
     pmf_layer.to_device(device)
 
     def test_pmf_layer_forward(self):

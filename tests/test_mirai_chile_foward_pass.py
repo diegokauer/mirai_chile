@@ -20,9 +20,9 @@ class TestMiraiForwardPass(unittest.TestCase):
     if torch.cuda.is_available():
         device = 'cuda'
 
-    mirai_chile_pmf = MiraiChile(pmf_args, PMFLayer(612)).eval()
-    mirai_base_cpl = MiraiChile(cpl_args, CumulativeProbabilityLayer(612)).eval()
-    mirai_eval = MiraiChile(eval_args, CumulativeProbabilityLayer(612)).eval()
+    mirai_chile_pmf = MiraiChile(args=pmf_args, head=PMFLayer(612, pmf_args)).eval()
+    mirai_base_cpl = MiraiChile(args=cpl_args, head=CumulativeProbabilityLayer(612, cpl_args)).eval()
+    mirai_eval = MiraiChile(args=eval_args, head=CumulativeProbabilityLayer(612, eval_args)).eval()
 
     batch = {
         "side_seq": torch.tensor([0, 0, 0, 0]),

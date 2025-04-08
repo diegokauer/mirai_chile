@@ -4,7 +4,7 @@ import pandas as pd
 import torch
 
 
-def predict_probas(model, dataset, device, dataloader, rank=None, dry_run=False):
+def predict_probas(model, dataset, device, dataloader, rank=None, dry_run=False, save_predictions=True):
     assert dataset in ["logit", "transformer_hidden", "encoder_hidden"]
 
     model.eval()
@@ -13,7 +13,7 @@ def predict_probas(model, dataset, device, dataloader, rank=None, dry_run=False)
     with torch.no_grad():
         for batch_idx, data in enumerate(dataloader):
 
-            data[dataset] = data[dataset].to(device)
+            data["data"] = data["data"].to(device)
 
             if "batch" in data:
                 for key, val in data["batch"].items():
@@ -21,7 +21,7 @@ def predict_probas(model, dataset, device, dataloader, rank=None, dry_run=False)
             else:
                 data["batch"] = None
 
-            logit, _, _ = model(data[dataset], data["batch"])
+            logit, _, _ = model(data["data"], data["batch"])
             pmf, s = model.head.logit_to_cancer_prob(logit)
 
             s_inv = 1 - s
@@ -46,5 +46,6 @@ def predict_probas(model, dataset, device, dataloader, rank=None, dry_run=False)
         filename = f"predicted_probas_{dataset}_rank_{rank}.csv"
 
     df = pd.DataFrame(probs_table)
-    df.to_csv(os.path.join("./mirai_chile/data/output/", filename), index=False)
+    if save_predictions:
+        df.to_csv(os.path.join("./mirai_chile/data/output/", filename), index=False)
     return df

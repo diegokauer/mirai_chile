@@ -1,21 +1,23 @@
 import argparse
+from collections import Counter
 
+import numpy as np
 import torch
 import torch.optim as optim
-from torch.optim.lr_scheduler import ExponentialLR
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, WeightedRandomSampler
 
 from mirai_chile.configs.train_config import TrainTransformerHiddenConfig
 from mirai_chile.data.transformer_hidden import TransformerHiddenDataset
+from mirai_chile.loss.discriminator_loss import DiscriminationLoss
 from mirai_chile.loss.pmf_loss import PMFLoss
 from mirai_chile.model_evaluation.evaluation_functions.yearly_roc_auc import YearlyROCAUCFunction
 from mirai_chile.model_evaluation.evaluation_functions.yearly_roc_auc_manufacturer import \
     YearlyROCAUCManufacturerFunction
 from mirai_chile.model_evaluation.evaluation_pipeline import EvaluationPipeline
+from mirai_chile.models.discriminator import Discriminator
 from mirai_chile.models.mirai_model import MiraiChile
 from mirai_chile.models.pmf_layer import PMFLayer
 from mirai_chile.predict import predict_probas
-from mirai_chile.test import test_model
 from mirai_chile.train import train_model
 
 
@@ -25,6 +27,7 @@ def main(args):
     dry_run = args.dry_run
     save_model = args.save_model
     save_each_epoch = args.save_each_epoch
+    batch_size = args.batch_size
 
     # torch.manual_seed(seed)
 
@@ -33,10 +36,20 @@ def main(args):
         device = torch.device("cuda")
 
     args = TrainTransformerHiddenConfig()
-    loss_function = PMFLoss(args)
     head = PMFLayer(612, args)
-    model = MiraiChile(args=args, loss_function=loss_function, head=head)
+    model = MiraiChile(args=args, head=head)
+    discriminator = Discriminator(5, 612)
     model.to_device(device)
+    discriminator.to_device(device)
+
+    models = {
+        'mirai': model,
+        'discriminator': discriminator
+    }
+    loss_functions = {
+        'mirai': PMFLoss(args=args).to_device(device),
+        'discriminator': DiscriminationLoss(args=args).to_device(device),
+    }
 
     print("Loading Datasets...")
     dataset = TransformerHiddenDataset()
@@ -44,42 +57,81 @@ def main(args):
     dev_dataset = dataset.get_split("dev")
     test_dataset = dataset.get_split("test")
 
+    # # Extract labels based on the ('cancer', 'machine_manufacturer') combination
+    # labels = list(zip(train_dataset.dataframe.cancer, train_dataset.dataframe.machine_manufacturer))
+    # class_counts = Counter(labels)
+    labels = train_dataset.dataframe.cancer
+    class_counts = Counter(labels)
+
+    # Compute class weights (inverse frequency)
+    num_samples = len(labels)
+    class_weights = {cls: num_samples / count for cls, count in class_counts.items()}
+
+    # Convert class weights to sample weights
+    sample_weights = np.array([class_weights[label] for label in labels])
+    print("Class Weights:", sample_weights)
+
+    # Convert sample weights to a PyTorch tensor
+    sample_weights_tensor = torch.DoubleTensor(sample_weights)
+
+    sampler = WeightedRandomSampler(weights=sample_weights_tensor,
+                                    num_samples=len(sample_weights),
+                                    replacement=True)
+
     train_kwargs = {
         # "num_workers": int(os.environ["SLURM_CPUS_PER_TASK"]),
-        "batch_size": 32,
-        "shuffle": True
+        "batch_size": batch_size,
+        # "shuffle": True
+        "sampler": sampler
     }
     train_dataloader = DataLoader(train_dataset, **train_kwargs)
 
     test_kwargs = {
         # "num_workers": int(os.environ["SLURM_CPUS_PER_TASK"]),
-        "batch_size": 32,
+        "batch_size": batch_size,
         "shuffle": True
     }
     dev_dataloader = DataLoader(dev_dataset, **test_kwargs)
     test_dataloader = DataLoader(test_dataset, **test_kwargs)
+    dataloaders = {
+        'train': train_dataloader,
+        'dev': dev_dataloader,
+        'test': test_dataloader
+    }
 
-    optimizer = optim.Adam(model.parameters(), 5e-3)
-    scheduler = ExponentialLR(optimizer, 0.95)
+    optimizers = {
+        'mirai': optim.Adam(model.parameters(), 1e-3, weight_decay=1e-5),
+        'discriminator': optim.Adam(discriminator.parameters())
+    }
 
     eval_pipe = EvaluationPipeline()
     eval_pipe.add_metric(YearlyROCAUCFunction(), {"max_followup": 5})
     eval_pipe.add_metric(YearlyROCAUCManufacturerFunction(), {"max_followup": 5})
 
     print("Beginning training...")
-    for epoch in range(epochs):
-        print(f"Epoch: {epoch}")
-        train_model(model, "transformer_hidden", device, train_dataloader, optimizer, epoch, dry_run)
-        test_model(model, "transformer_hidden", device, dev_dataloader, eval_pipe, dry_run)
-        if save_each_epoch and save_model:
-            torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_transformer_pmf_epoch_{epoch}.pt")
-        scheduler.step()
+    # for epoch in range(epochs):
+    # print(f"Epoch: {epoch}")
+    train_model(
+        models=models,
+        loss_functions=loss_functions,
+        dataset="transformer_hidden",
+        device=device,
+        dataloaders=dataloaders,
+        optimizers=optimizers,
+        epochs=epochs,
+        eval_pipeline=eval_pipe,
+        dry_run=dry_run
+    )
+    # train_model(model, "transformer_hidden", device, train_dataloader, optimizer, epoch, dry_run)
+    # test_model(model, loss_function, "transformer_hidden", device, dev_dataloader, eval_pipe, dry_run)
+    # if save_each_epoch and save_model:
+    #     torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_transformer_pmf_epoch_{epoch}.pt")
 
     if save_model:
         torch.save(model.state_dict(), f"mirai_chile/checkpoints/mirai_transformer_pmf_final.pt")
 
     print("Predicting future cancer probabilities...")
-    prob_df = predict_probas(model, "transformer_hidden", device, DataLoader(dataset, **test_kwargs), dry_run=dry_run)
+    prob_df = predict_probas(model, "transformer_hidden", device, test_dataloader, dry_run=dry_run)
     eval_pipe.flush()
     eval_pipe.eval_dataset(prob_df)
     print(eval_pipe)
@@ -88,9 +140,9 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Train model")
-    parser.add_argument('--epochs', type=int, help="number of epochs", default=10)
+    parser.add_argument('--epochs', type=int, help="number of epochs", default=15)
     parser.add_argument('--seed', type=int, help="Random seed", default=1999)
-    parser.add_argument('--batch_size', type=int, help="Batch size of dataloaders", default=32)
+    parser.add_argument('--batch_size', type=int, help="Batch size of dataloaders", default=64)
     parser.add_argument('--dry-run', type=bool, help="Dry run model", default=False)
     parser.add_argument('--save-model', type=bool, help="Save model", default=True)
     parser.add_argument('--save-each-epoch', type=bool, help="Save model on each epoch", default=True)
