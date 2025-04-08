@@ -69,7 +69,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Train model")
-    parser.add_argument('data_directory', type=str, help="path of the directory of files")
+    # parser.add_argument('data_directory', type=str, help="path of the directory of files")
     parser.add_argument('--epochs', type=int, help="number of epochs", default=15)
     parser.add_argument('--seed', type=int, help="Random seed", default=1999)
     parser.add_argument('--batch_size', type=int, help="Batch size of dataloaders", default=64)
