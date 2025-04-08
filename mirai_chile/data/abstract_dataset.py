@@ -63,15 +63,12 @@ class AbstractDataset(Dataset):
 
     def get_split(self, split):
         return self.__class__(self.dataframe[self.dataframe.split == split],
-                              col_identifier=self.col_identifier,
                               censoring_dist=self.censoring_dist)
 
     def get_splits(self, splits):
         return self.__class__(self.dataframe[self.dataframe.split.isin(splits)],
-                              col_identifier=self.col_identifier,
                               censoring_dist=self.censoring_dist)
 
     def get_manufacturer(self, manufacturer):
         return self.__class__(self.dataframe[self.dataframe.machine_manufacturer == manufacturer],
-                              col_identifier=self.col_identifier,
                               censoring_dist=self.censoring_dist)

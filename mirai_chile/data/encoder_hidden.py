@@ -6,7 +6,9 @@ class EncoderHiddenDataset(AbstractDataset):
                  dataframe=None,
                  encoder_hidden_table_path="./dataset/combined_encoder_hidden.csv",
                  outcomes_table_path="./dataset/outcomes.csv",
-                 nrows=None):
+                 nrows=None,
+                 censoring_dist=None):
+        self.censoring_dist = censoring_dist
         super().__init__(
             dataframe=dataframe,
             hidden_table_path=encoder_hidden_table_path,

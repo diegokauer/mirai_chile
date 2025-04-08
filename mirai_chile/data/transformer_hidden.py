@@ -6,7 +6,9 @@ class TransformerHiddenDataset(AbstractDataset):
                  dataframe=None,
                  transformer_hidden_table_path="mirai_chile/data/dataset/combined_transformer_hidden.csv",
                  outcomes_table_path="mirai_chile/data/dataset/outcomes.csv",
-                 nrows=None):
+                 nrows=None,
+                 censoring_dist=None):
+        self.censoring_dist = censoring_dist
         super().__init__(
             dataframe=dataframe,
             hidden_table_path=transformer_hidden_table_path,
